@@ -53,3 +53,21 @@ class GenreTitle(models.Model):
 
     def __str__(self):
         return f'{self.title} {self.genre}'
+
+
+class Review(models.Model):
+    """Модель отзыва."""
+    title = models.ForeignKey(
+        Title, on_delete=models.CASCADE, related_name='reviews'
+    )
+    text = models.TextField(verbose_name='Текст')
+    # author = models.ForeignKey(
+    #     User, on_delete=models.CASCADE, related_name='reviews'
+    #     )
+    score = models.IntegerField(verbose_name='Оценка')
+    pub_date = models.DateTimeField(
+        auto_now_add=True, verbose_name='Дата публикации'
+    )
+
+    def __str__(self):
+        return f'Отзыв к произведению {self.title} от автора {self.author}'
