@@ -11,7 +11,6 @@ class ReviewViewSet(viewsets.ModelViewSet):
     Переопределяем get_queryset для получения title_id и
     perform_create для сохранения автора и произведения.
     """
-    queryset = Review.objects.all()
     serializer_class = ReviewSerializer
 
     def get_title_object(self):
