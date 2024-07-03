@@ -1,5 +1,11 @@
 from django.contrib import admin
-from reviews.models import Category, Genre, Review, Title
+from reviews.models import User, Category, Genre, Review, Title
+
+
+@admin.register(User)
+class UserAdmin(admin.ModelAdmin):
+    list_display = ('username', 'email', 'first_name', 'last_name', 'role')
+    search_fields = ('username',)
 
 
 @admin.register(Category)

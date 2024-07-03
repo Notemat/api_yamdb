@@ -31,8 +31,8 @@ class User(AbstractUser):
         max_length=100,
         unique=True,
     )
-    first_name = models.TextField('Имя', max_length=50, blank=True)
-    last_name = models.TextField('Фамилия', max_length=50, blank=True)
+    first_name = models.CharField('Имя', max_length=50, blank=True)
+    last_name = models.CharField('Фамилия', max_length=50, blank=True)
     about = models.TextField('О себе', max_length=500, blank=True)
     role = models.CharField(
         'Роль', max_length=30, choices=USER_ROLE, default='user'
