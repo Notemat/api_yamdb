@@ -18,7 +18,7 @@ class ReviewViewSet(viewsets.ModelViewSet):
         return get_object_or_404(Title, pk=title_id)
 
     def get_queryset(self):
-        return self.get_title_object().reviews.all()
+        return self.get_title_object().reviews.select_related('author')
 
     def perform_create(self, serializer):
         serializer.save(
