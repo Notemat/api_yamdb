@@ -56,7 +56,10 @@ class GenreTitle(models.Model):
 
 
 class Review(models.Model):
-    """Модель отзыва."""
+    """
+    Модель отзыва.
+    Доработать после добавления модели пользователя.
+    """
     title = models.ForeignKey(
         Title, on_delete=models.CASCADE, related_name='reviews'
     )
@@ -68,6 +71,10 @@ class Review(models.Model):
     pub_date = models.DateTimeField(
         auto_now_add=True, verbose_name='Дата публикации'
     )
+
+    class Meta:
+        verbose_name = 'Отзыв'
+        verbose_name_plural = 'Отзывы'
 
     def __str__(self):
         return f'Отзыв к произведению {self.title} от автора {self.author}'
