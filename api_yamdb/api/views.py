@@ -78,7 +78,7 @@ class GenreDestroyAPIView(generics.DestroyAPIView):
 class TitleViewSet(viewsets.ModelViewSet):
     """CRUD для модели Title."""
 
-    queryset = Title.objects.prefetch_related('genre', 'categore')
+    queryset = Title.objects.prefetch_related('genre', 'category')
     serializer_class = TitleSerializer
     permission_classes = (IsAdminPermission, )
     search_fields = ('name', 'year', 'category__slug', 'genre__slug')
