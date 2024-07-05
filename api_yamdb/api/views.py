@@ -3,7 +3,12 @@ from rest_framework import viewsets
 from rest_framework import generics
 
 from reviews.models import Category, Genre, Review, Title
-from api.serializers import CategorySerializer, GenreSerializer, ReviewSerializer
+from api.serializers import (
+    CategorySerializer,
+    GenreSerializer,
+    ReviewSerializer
+)
+from api.permissions import IsAdminPermission
 
 
 class ReviewViewSet(viewsets.ModelViewSet):
@@ -32,14 +37,14 @@ class CategoryListCreateAPIView(generics.ListCreateAPIView):
 
     queryset = Category.objects.all()
     serializer_class = CategorySerializer
-    # permission_classes
+    permission_classes = (IsAdminPermission, )
 
 
 class CategoryDestroyAPIView(generics.DestroyAPIView):
     """delete для объекта модели Category."""
 
     serializer_class = CategorySerializer
-    # permission_classes
+    permission_classes = (IsAdminPermission, )
 
     def get_queryset(self):
         queryset = get_object_or_404(Category, slug=self.kwargs['slug'])
@@ -51,14 +56,14 @@ class GenreListCreateAPIView(generics.ListCreateAPIView):
 
     queryset = Genre.objects.all()
     serializer_class = GenreSerializer
-    # permission_classes
+    permission_classes = (IsAdminPermission, )
 
 
 class GenreDestroyAPIView(generics.DestroyAPIView):
     """delete для объекта модели Genre."""
 
     serializer_class = GenreSerializer
-    # permission_classes
+    permission_classes = (IsAdminPermission, )
 
     def get_queryset(self):
         queryset = get_object_or_404(Genre, slug=self.kwargs['slug'])
