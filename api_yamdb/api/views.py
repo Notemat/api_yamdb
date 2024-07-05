@@ -1,8 +1,8 @@
 from django.shortcuts import get_object_or_404
 from rest_framework import viewsets
 
-from reviews.models import Review, Title
-from api.serializers import ReviewSerializer
+from reviews.models import Comment, Review, Title
+from api.serializers import CommentSerializer, ReviewSerializer
 
 
 class ReviewViewSet(viewsets.ModelViewSet):
@@ -24,3 +24,23 @@ class ReviewViewSet(viewsets.ModelViewSet):
         serializer.save(
             author=self.request.user, title=self.get_title_object()
         )
+
+
+class CommentViewSet(viewsets.ModelViewSet):
+    """
+    Вьюсет для модели комментария.
+    Переопределяем get_queryset для получения id поста и
+    perform_create для сохранения автора и отзыва.
+    """
+
+    serializer_class = CommentSerializer
+
+    def get_review_object(self):
+        review_id = self.kwargs.get('review_id')
+        return get_object_or_404(Review, pk=review_id)
+
+    def get_queryset(self):
+        return self.get_post_object().comments.all()
+
+    def perform_create(self, serializer):
+        serializer.save(author=self.request.user, post=self.get_review_object())

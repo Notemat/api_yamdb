@@ -1,5 +1,6 @@
 """Модели приложения reviews."""
 
+from django.core.validators import MinValueValidator, MaxValueValidator
 from django.db import models
 from django.contrib.auth.models import AbstractUser
 
@@ -119,10 +120,12 @@ class Review(models.Model):
         Title, on_delete=models.CASCADE, related_name='reviews'
     )
     text = models.TextField(verbose_name='Текст')
-    # author = models.ForeignKey(
-    #     User, on_delete=models.CASCADE, related_name='reviews'
-    #     )
-    score = models.IntegerField(verbose_name='Оценка')
+    author = models.ForeignKey(
+        User, on_delete=models.CASCADE, related_name='reviews'
+        )
+    score = models.IntegerField(
+        verbose_name='Оценка',
+        validators=[MinValueValidator(1), MaxValueValidator(10)])
     pub_date = models.DateTimeField(
         auto_now_add=True, verbose_name='Дата публикации'
     )
@@ -130,6 +133,28 @@ class Review(models.Model):
     class Meta:
         verbose_name = 'Отзыв'
         verbose_name_plural = 'Отзывы'
+        unique_together = ('title', 'author')
 
     def __str__(self):
         return f'Отзыв к произведению {self.title} от автора {self.author}'
+
+
+class Comment(models.Model):
+    """Модель комментария."""
+    review = models.ForeignKey(
+        Review, on_delete=models.CASCADE, related_name='comments'
+    )
+    text = models.TextField(verbose_name='Текст комментария')
+    author = models.ForeignKey(
+        User, on_delete=models.CASCADE, related_name='comments'
+        )
+    pub_date = models.DateTimeField(
+        auto_now_add=True, verbose_name='Дата публикации'
+    )
+
+    class Meta:
+        verbose_name = 'Комментарии'
+        verbose_name_plural = 'Комментарий'
+
+    def __str__(self):
+        return f'Комментарий к отзыву {self.review} от автора {self.author}'
