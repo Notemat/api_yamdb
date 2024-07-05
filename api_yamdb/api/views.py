@@ -74,6 +74,7 @@ class GenreDestroyAPIView(generics.DestroyAPIView):
         return queryset
 
 
+# возможно нехватает каких-то методов, например доп валидации
 class TitleViewSet(viewsets.ModelViewSet):
     """CRUD для модели Title."""
 
