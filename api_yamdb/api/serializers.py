@@ -5,6 +5,7 @@ from django.db.models import Avg
 
 from reviews.models import Category, Genre, GenreTitle, Review, Title
 
+
 class CategorySerializer(serializers.ModelSerializer):
     """Серилизатор для модели категорий."""
 
