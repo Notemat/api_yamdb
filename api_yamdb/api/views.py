@@ -1,8 +1,16 @@
 from django.shortcuts import get_object_or_404
 from rest_framework import viewsets
+from rest_framework import generics
+from rest_framework.filters import SearchFilter
 
-from reviews.models import Review, Title
-from api.serializers import ReviewSerializer
+from reviews.models import Category, Genre, Review, Title
+from api.serializers import (
+    CategorySerializer,
+    GenreSerializer,
+    ReviewSerializer,
+    TitleSerializer
+)
+from api.permissions import IsAdminPermission
 
 
 class ReviewViewSet(viewsets.ModelViewSet):
@@ -24,3 +32,53 @@ class ReviewViewSet(viewsets.ModelViewSet):
         serializer.save(
             author=self.request.user, title=self.get_title_object()
         )
+
+
+class CategoryListCreateAPIView(generics.ListCreateAPIView):
+    """list and create для модели Category."""
+
+    queryset = Category.objects.all()
+    serializer_class = CategorySerializer
+    permission_classes = (IsAdminPermission, )
+    search_fields = ('name', )
+
+
+class CategoryDestroyAPIView(generics.DestroyAPIView):
+    """delete для объекта модели Category."""
+
+    serializer_class = CategorySerializer
+    permission_classes = (IsAdminPermission, )
+
+    def get_queryset(self):
+        queryset = get_object_or_404(Category, slug=self.kwargs['slug'])
+        return queryset
+
+
+class GenreListCreateAPIView(generics.ListCreateAPIView):
+    """list and create для модели Genre."""
+
+    queryset = Genre.objects.all()
+    serializer_class = GenreSerializer
+    permission_classes = (IsAdminPermission, )
+    search_fields = ('name', )
+
+
+class GenreDestroyAPIView(generics.DestroyAPIView):
+    """delete для объекта модели Genre."""
+
+    serializer_class = GenreSerializer
+    permission_classes = (IsAdminPermission, )
+
+    def get_queryset(self):
+        queryset = get_object_or_404(Genre, slug=self.kwargs['slug'])
+        return queryset
+
+
+# возможно нехватает каких-то методов, например доп валидации
+class TitleViewSet(viewsets.ModelViewSet):
+    """CRUD для модели Title."""
+
+    queryset = Title.objects.prefetch_related('genre', 'categore')
+    serializer_class = TitleSerializer
+    permission_classes = (IsAdminPermission, )
+    search_fields = ('name', 'year', 'category__slug', 'genre__slug')
