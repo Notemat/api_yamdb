@@ -1,12 +1,14 @@
 from django.shortcuts import get_object_or_404
 from rest_framework import viewsets
 from rest_framework import generics
+from rest_framework.filters import SearchFilter
 
 from reviews.models import Category, Genre, Review, Title
 from api.serializers import (
     CategorySerializer,
     GenreSerializer,
-    ReviewSerializer
+    ReviewSerializer,
+    TitleSerializer
 )
 from api.permissions import IsAdminPermission
 
@@ -38,6 +40,7 @@ class CategoryListCreateAPIView(generics.ListCreateAPIView):
     queryset = Category.objects.all()
     serializer_class = CategorySerializer
     permission_classes = (IsAdminPermission, )
+    search_fields = ('name', )
 
 
 class CategoryDestroyAPIView(generics.DestroyAPIView):
@@ -57,6 +60,7 @@ class GenreListCreateAPIView(generics.ListCreateAPIView):
     queryset = Genre.objects.all()
     serializer_class = GenreSerializer
     permission_classes = (IsAdminPermission, )
+    search_fields = ('name', )
 
 
 class GenreDestroyAPIView(generics.DestroyAPIView):
@@ -68,3 +72,12 @@ class GenreDestroyAPIView(generics.DestroyAPIView):
     def get_queryset(self):
         queryset = get_object_or_404(Genre, slug=self.kwargs['slug'])
         return queryset
+
+
+class TitleViewSet(viewsets.ModelViewSet):
+    """CRUD для модели Title."""
+
+    queryset = Title.objects.prefetch_related('genre', 'categore')
+    serializer_class = TitleSerializer
+    permission_classes = (IsAdminPermission, )
+    search_fields = ('name', 'year', 'category__slug', 'genre__slug')
