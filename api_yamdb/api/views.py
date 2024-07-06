@@ -3,35 +3,15 @@ from rest_framework import viewsets
 from rest_framework import generics
 from rest_framework.filters import SearchFilter
 
-from reviews.models import Category, Genre, Review, Title
+from reviews.models import Category, Comment, Genre, Review, Title
 from api.serializers import (
     CategorySerializer,
+    CommentSerializer,
     GenreSerializer,
     ReviewSerializer,
     TitleSerializer
 )
 from api.permissions import IsAdminPermission
-
-
-class ReviewViewSet(viewsets.ModelViewSet):
-    """
-    Вьюсет для модели отзывов.
-    Переопределяем get_queryset для получения title_id и
-    perform_create для сохранения автора и произведения.
-    """
-    serializer_class = ReviewSerializer
-
-    def get_title_object(self):
-        title_id = self.kwargs.get('title_id')
-        return get_object_or_404(Title, pk=title_id)
-
-    def get_queryset(self):
-        return self.get_title_object().reviews.select_related('author')
-
-    def perform_create(self, serializer):
-        serializer.save(
-            author=self.request.user, title=self.get_title_object()
-        )
 
 
 class CategoryListCreateAPIView(generics.ListCreateAPIView):
@@ -82,3 +62,44 @@ class TitleViewSet(viewsets.ModelViewSet):
     serializer_class = TitleSerializer
     permission_classes = (IsAdminPermission, )
     search_fields = ('name', 'year', 'category__slug', 'genre__slug')
+
+
+class ReviewViewSet(viewsets.ModelViewSet):
+    """
+    Вьюсет для модели отзывов.
+    Переопределяем get_queryset для получения title_id и
+    perform_create для сохранения автора и произведения.
+    """
+    serializer_class = ReviewSerializer
+
+    def get_title_object(self):
+        title_id = self.kwargs.get('title_id')
+        return get_object_or_404(Title, pk=title_id)
+
+    def get_queryset(self):
+        return self.get_title_object().reviews.select_related('author')
+
+    def perform_create(self, serializer):
+        serializer.save(
+            author=self.request.user, title=self.get_title_object()
+        )
+
+
+class CommentViewSet(viewsets.ModelViewSet):
+    """
+    Вьюсет для модели комментария.
+    Переопределяем get_queryset для получения id поста и
+    perform_create для сохранения автора и отзыва.
+    """
+
+    serializer_class = CommentSerializer
+
+    def get_review_object(self):
+        review_id = self.kwargs.get('review_id')
+        return get_object_or_404(Review, pk=review_id)
+
+    def get_queryset(self):
+        return self.get_post_object().comments.all()
+
+    def perform_create(self, serializer):
+        serializer.save(author=self.request.user, review=self.get_review_object())

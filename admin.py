@@ -25,13 +25,14 @@ class TitleAdmin(admin.ModelAdmin):
     list_display = ('name', 'year')
     search_fields = ('name',)
     list_filter = ('year',)
+    readonly_fields = ('rating',)
 
 
 @admin.register(Review)
 class ReviewsAdmin(admin.ModelAdmin):
     list_display = ('title', 'author')
-    search_fields = ('title', 'author', 'pub_date')
-    list_filter = ('pub_date',)
+    search_fields = ('title', 'author', 'score', 'pub_date')
+    list_filter = ('pub_date', 'score')
 
 
 @admin.register(Comment)
