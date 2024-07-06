@@ -67,6 +67,11 @@ class ReviewSerializer(serializers.ModelSerializer):
         model = Review
         fields = ('id', 'text', 'author', 'score', 'pub_date')
         read_only_fields = ('id', 'author', 'pub_date')
+        validators = [
+            UniqueTogetherValidator(
+                queryset=Review.objects.all(), fields=('title', 'author')
+            )
+        ]
 
     def validate_score(self, value):
         """Проверка, что оценка находится в диапазоне от 1 до 10."""
