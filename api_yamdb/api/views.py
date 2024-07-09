@@ -11,7 +11,10 @@ from api.serializers import (
     ReviewSerializer,
     TitleSerializer
 )
-from api.permissions import IsAdminPermission, IsAuthorModeratorPermission
+from api.permissions import (
+    IsAdminPermission,
+    IsAuthorOrModeratorOrAdminPermission
+)
 
 
 class CategoryListCreateAPIView(generics.ListCreateAPIView):
@@ -71,7 +74,7 @@ class ReviewViewSet(viewsets.ModelViewSet):
     perform_create для сохранения автора и произведения.
     """
     serializer_class = ReviewSerializer
-    permission_classes = (IsAuthorModeratorPermission, )
+    permission_classes = (IsAuthorOrModeratorOrAdminPermission, )
 
     def get_title_object(self):
         title_id = self.kwargs.get('title_id')
@@ -94,7 +97,7 @@ class CommentViewSet(viewsets.ModelViewSet):
     """
 
     serializer_class = CommentSerializer
-    permission_classes = (IsAuthorModeratorPermission, )
+    permission_classes = (IsAuthorOrModeratorOrAdminPermission, )
 
     def get_review_object(self):
         review_id = self.kwargs.get('review_id')
