@@ -60,3 +60,26 @@ python3 manage.py runserver
 http://127.0.0.1:8000/redoc/ 
 ```
 будет доступна документация
+
+### Как выполнить импорт из csv файлов в бд:
+```
+python3 manage.py users_import
+```
+```
+python3 manage.py category_import
+```
+```
+python3 manage.py genre_import
+```
+```
+python3 manage.py titles_import
+```
+```
+python3 manage.py genre_title_import
+```
+```
+python3 manage.py review_import
+```
+```
+python3 manage.py comments_import
+```
