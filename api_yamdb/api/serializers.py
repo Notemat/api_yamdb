@@ -125,7 +125,7 @@ class UserSerializer(serializers.ModelSerializer):
         """Мета класс пользователя."""
 
         fields = (
-            'about',
+            'bio',
             'email',
             'first_name',
             'last_name',
@@ -153,7 +153,7 @@ class UserSerializer(serializers.ModelSerializer):
 class TokenSerializer(serializers.Serializer):
     """Сериализатор для токена."""
 
-    username = serializers.CharField(max_length=150, required=True)
+    username = serializers.SlugField(max_length=150, required=True)
 
     class Meta:
         """Мета класс токена."""
@@ -172,11 +172,10 @@ class MeSerializer(serializers.ModelSerializer):
 
         model = User
         fields = (
-            'about',
+            'bio',
             'email',
             'first_name',
             'last_name',
             'role',
             'username'
         )
-

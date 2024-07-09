@@ -30,7 +30,7 @@ urlpatterns = [
     path('categories/<slug:slug>/', CategoryDestroyAPIView.as_view()),
     path('genres/', GenreListCreateAPIView.as_view()),
     path('genres/<slug:slug>/', GenreDestroyAPIView.as_view()),
-    path('api/v1/auth/signup/', send_confirmation_code),
-    path('api/v1/auth/token/', send_token),
+    path('auth/signup/', send_confirmation_code),
+    path('auth/token/', send_token),
     path('', include(router.urls)),
 ]

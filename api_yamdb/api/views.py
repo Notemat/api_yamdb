@@ -7,7 +7,7 @@ from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import RefreshToken, AccessToken
-from rest_framework import viewsets, filters, status
+from rest_framework import viewsets, status
 from rest_framework import generics
 from rest_framework.filters import SearchFilter
 
@@ -179,7 +179,6 @@ class UserViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all()
     serializer_class = UserSerializer
     pagination_class = PageNumberPagination
-    filter_backends = (filters.SearchFilter, )
     search_fields = ('username', )
     permission_classes = (IsAdminPermission,)
     lookup_field = 'username'
@@ -192,7 +191,7 @@ class UserViewSet(viewsets.ModelViewSet):
     def me(self, request):
         """Получение или обновление пользователя."""
         user = get_object_or_404(User, username=self.request.user)
-        serializer = MeSerializer(self.request.user)
+        serializer = MeSerializer(username=self.request.user.username)
 
         if request.method == 'PATCH':
             serializer = MeSerializer(user, data=request.data, partial=True)

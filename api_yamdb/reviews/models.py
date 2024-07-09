@@ -22,19 +22,19 @@ class User(AbstractUser):
     ]
 
     username = models.CharField(
-        max_length=50,
+        max_length=150,
         unique=True,
         blank=False,
         null=False
     )
     email = models.EmailField(
         'Электронная почта',
-        max_length=100,
+        max_length=254,
         unique=True,
     )
     first_name = models.CharField('Имя', max_length=50, blank=True)
     last_name = models.CharField('Фамилия', max_length=50, blank=True)
-    about = models.TextField('О себе', max_length=500, blank=True)
+    bio = models.TextField('О себе', max_length=500, blank=True)
     role = models.CharField(
         'Роль', max_length=30, choices=USER_ROLE, default='user'
     )
