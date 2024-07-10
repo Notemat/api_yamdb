@@ -34,6 +34,7 @@ class CategoryListCreateAPIView(generics.ListCreateAPIView):
     queryset = Category.objects.all()
     serializer_class = CategorySerializer
     permission_classes = (IsAdminPermission, )
+    filter_backends = (SearchFilter, )
     search_fields = ('name', )
 
 
@@ -54,6 +55,7 @@ class GenreListCreateAPIView(generics.ListCreateAPIView):
     queryset = Genre.objects.all()
     serializer_class = GenreSerializer
     permission_classes = (IsAdminPermission, )
+    filter_backends = (SearchFilter, )
     search_fields = ('name', )
 
 
@@ -75,6 +77,7 @@ class TitleViewSet(viewsets.ModelViewSet):
     queryset = Title.objects.prefetch_related('genre', 'category')
     serializer_class = TitleSerializer
     permission_classes = (IsAdminPermission, )
+    filter_backends = (SearchFilter, )
     search_fields = ('name', 'year', 'category__slug', 'genre__slug')
 
 
@@ -185,6 +188,7 @@ class UserViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all()
     serializer_class = UserSerializer
     pagination_class = PageNumberPagination
+    filter_backends = (SearchFilter, )
     search_fields = ('username', )
     permission_classes = (IsAdminPermission,)
     lookup_field = 'username'

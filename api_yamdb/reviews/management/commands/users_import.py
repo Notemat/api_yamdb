@@ -26,7 +26,7 @@ class Command(BaseCommand):
                     username=row['username'],
                     email=row['email'],
                     role=row['role'],
-                    about=row['bio']
+                    bio=row['bio']
                 )
                 for row in reader
             ]
