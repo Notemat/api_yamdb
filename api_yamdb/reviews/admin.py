@@ -18,7 +18,7 @@ class UserAdmin(admin.ModelAdmin):
                 'user_permissions',
                 ('username', 'password'),
                 ('first_name', 'last_name'),
-                'about',
+                'bio',
                 'email'
             ),
         }),
