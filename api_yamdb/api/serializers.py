@@ -1,3 +1,4 @@
+import re
 from datetime import datetime
 
 from django.core.exceptions import ValidationError
@@ -142,10 +143,16 @@ class UserSerializer(serializers.ModelSerializer):
 
     def validate_username(self, value):
         """Валидация имени пользователя."""
-
-        name = value.lower()
-        if name == 'me':
+        if not re.match(r'^[\w.@+-]+\Z', value):
+            raise ValidationError('Недопустимый никнейм.')
+        if value.lower() == 'me':
             raise ValidationError('Имя пользователя "me" запрещено.')
+        return value
+
+    def validate_email(self, value):
+        """Проверка валидности email."""
+        if not re.match(r"^[^@]+@[^@]+\.[^@]+$", value):
+            raise ValidationError("Неверный формат email.")
         return value
 
 
