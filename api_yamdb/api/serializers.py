@@ -15,7 +15,6 @@ from reviews.models import (Category,
                             User
                             )
 
-
 class CategorySerializer(serializers.ModelSerializer):
     """Серилизатор для модели категорий."""
 
