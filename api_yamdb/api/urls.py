@@ -8,7 +8,10 @@ from api.views import (
     CommentViewSet,
     GenreListCreateAPIView,
     GenreDestroyAPIView,
-    TitleViewSet
+    TitleViewSet,
+    send_confirmation_code,
+    send_token,
+    UserViewSet
 )
 
 router = DefaultRouter()
@@ -20,11 +23,14 @@ router.register(
     CommentViewSet, basename='comments'
 )
 router.register(r'titles', TitleViewSet)
+router.register(r'users', UserViewSet)
 
 urlpatterns = [
     path('categories/', CategoryListCreateAPIView.as_view()),
     path('categories/<slug:slug>/', CategoryDestroyAPIView.as_view()),
     path('genres/', GenreListCreateAPIView.as_view()),
     path('genres/<slug:slug>/', GenreDestroyAPIView.as_view()),
+    path('auth/signup/', send_confirmation_code),
+    path('auth/token/', send_token),
     path('', include(router.urls)),
 ]
