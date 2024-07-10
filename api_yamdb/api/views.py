@@ -130,14 +130,17 @@ def send_confirmation_code(request):
     serializer.is_valid(raise_exception=True)
     email = serializer.validated_data['email']
     username = serializer.validated_data['username']
-    user, created = User.objects.get_or_create(
-        email=email,
-        username=username
-    )
-    if not created:
-        user.email = email
-        user.username = username
-        user.save()
+    try:
+        user = User.objects.get(email=email)
+        return Response(
+            {'Error': 'Пользователь уже существует'},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+    except User.DoesNotExist:
+        user = User.objects.create(
+            email=email,
+            username=username
+        )
     confirmation_code = default_token_generator.make_token(user)
     send_mail(
         'Код подтверждения',
@@ -161,10 +164,8 @@ def send_token(request):
         User,
         username=serializer.validated_data['username']
     )
-
     confirmation_code = request.data.get('confirmation_code')
     refresh = RefreshToken.for_user(user)
-
     anwser = {
         'refresh': str(refresh),
         'access': str(refresh.access_token),
