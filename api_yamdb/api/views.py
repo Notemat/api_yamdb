@@ -7,11 +7,10 @@ from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import RefreshToken, AccessToken
-from rest_framework import viewsets, status
-from rest_framework import generics
+from rest_framework import generics, viewsets, status
 from rest_framework.filters import SearchFilter
 
-from reviews.models import Category, Comment, Genre, Review, Title, User
+from reviews.models import Category, Genre, Review, Title, User
 from api.serializers import (
     CategorySerializer,
     CommentSerializer,
@@ -23,6 +22,7 @@ from api.serializers import (
     TokenSerializer,
     UserSerializer
 )
+from api.mixins import NotAllowedPutMixin
 from api.permissions import (
     IsAdminPermission,
     IsAuthorOrModeratorOrAdminPermission
@@ -72,7 +72,7 @@ class GenreDestroyAPIView(generics.DestroyAPIView):
 
 
 # возможно нехватает каких-то методов, например доп валидации
-class TitleViewSet(viewsets.ModelViewSet):
+class TitleViewSet(NotAllowedPutMixin, viewsets.ModelViewSet):
     """CRUD для модели Title."""
 
     queryset = Title.objects.prefetch_related('genre', 'category')
@@ -86,7 +86,7 @@ class TitleViewSet(viewsets.ModelViewSet):
         return TitleReadSerializer
 
 
-class ReviewViewSet(viewsets.ModelViewSet):
+class ReviewViewSet(NotAllowedPutMixin, viewsets.ModelViewSet):
     """
     Вьюсет для модели отзывов.
     Переопределяем get_queryset для получения title_id и
@@ -108,7 +108,7 @@ class ReviewViewSet(viewsets.ModelViewSet):
         )
 
 
-class CommentViewSet(viewsets.ModelViewSet):
+class CommentViewSet(NotAllowedPutMixin, viewsets.ModelViewSet):
     """
     Вьюсет для модели комментария.
     Переопределяем get_queryset для получения id поста и
@@ -123,11 +123,12 @@ class CommentViewSet(viewsets.ModelViewSet):
         return get_object_or_404(Review, pk=review_id)
 
     def get_queryset(self):
-        return self.get_post_object().comments.all()
+        return self.get_review_object().comments.select_related('author')
 
     def perform_create(self, serializer):
         serializer.save(
-            author=self.request.user, review=self.get_review_object()
+            author=self.request.user,
+            review=self.get_review_object()
         )
 
 
