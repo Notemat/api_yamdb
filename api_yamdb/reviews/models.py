@@ -57,6 +57,7 @@ class User(AbstractUser):
     class Meta:
         """Мета класс пользователя."""
 
+        ordering = ['username']
         verbose_name = 'Пользователь'
         verbose_name_plural = 'Пользователи'
 
@@ -72,6 +73,7 @@ class Title(models.Model):
                                  verbose_name='Категория')
 
     class Meta:
+        ordering = ['id']
         verbose_name = 'Произведение'
         verbose_name_plural = 'Произведения'
 
@@ -84,6 +86,7 @@ class Category(models.Model):
     slug = models.SlugField(max_length=50, unique=True, verbose_name='Слаг')
 
     class Meta:
+        ordering = ['slug']
         verbose_name = 'Категория'
         verbose_name_plural = 'Категории'
 
@@ -96,6 +99,7 @@ class Genre(models.Model):
     slug = models.SlugField(max_length=50, unique=True, verbose_name='Слаг')
 
     class Meta:
+        ordering = ['slug']
         verbose_name = 'Жанр'
         verbose_name_plural = 'Жанры'
 
@@ -135,6 +139,7 @@ class Review(models.Model):
     )
 
     class Meta:
+        ordering = ['pub_date']
         verbose_name = 'Отзыв'
         verbose_name_plural = 'Отзывы'
         constraints = [
@@ -166,6 +171,7 @@ class Comment(models.Model):
     )
 
     class Meta:
+        ordering = ['pub_date']
         verbose_name = 'Комментарии'
         verbose_name_plural = 'Комментарий'
 
