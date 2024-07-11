@@ -180,20 +180,24 @@ class TokenSerializer(serializers.Serializer):
         model = User
 
 
-class MeSerializer(serializers.ModelSerializer):
-    """Сериализатор пользователя."""
+class InitialRegisterDataSerializer(serializers.Serializer):
+    """Сериализатор входящих данных пользователя."""
+    
+    username = serializers.CharField()
+    email = serializers.EmailField()
 
-    role = serializers.CharField(read_only=True)
+
+class RegisterDataSerializer(serializers.ModelSerializer):
+    """Сериализатор для данных регистрации."""
+
+    def validate_username(self, value):
+        if not re.match(r'^[\w.@+-]+\Z', value):
+            raise ValidationError('Недопустимый никнейм.')
+        if value.lower() == 'me':
+            raise serializers.ValidationError(
+                'Нельзя использовать \'me\' в качестве логина')
+        return value
 
     class Meta:
-        """Мета класс пользователя."""
-
+        fields = ('username', 'email')
         model = User
-        fields = (
-            'bio',
-            'email',
-            'first_name',
-            'last_name',
-            'role',
-            'username'
-        )

@@ -20,9 +20,10 @@ from api.serializers import (
     ReviewSerializer,
     TitleReadSerializer,
     TitleWriteSerializer,
-    MeSerializer,
+    InitialRegisterDataSerializer,
     TokenSerializer,
-    UserSerializer
+    UserSerializer,
+    RegisterDataSerializer
 )
 from api.mixins import NotAllowedPutMixin
 from api.permissions import (
@@ -137,12 +138,12 @@ class CommentViewSet(NotAllowedPutMixin, viewsets.ModelViewSet):
 @api_view(['POST'])
 def send_confirmation_code(request):
     """Функция для получения кода."""
-    serializer = UserSerializer(data=request.data)
+    serializer = InitialRegisterDataSerializer(data=request.data)
     serializer.is_valid(raise_exception=True)
-    email = serializer.validated_data['email']
     username = serializer.validated_data['username']
-    try:
-        user = User.objects.get(email=email)
+    email = serializer.validated_data['email']
+    if User.objects.filter(username=username, email=email).exists():
+        user = User.objects.get(username=username, email=email)
         confirmation_code = default_token_generator.make_token(user)
         send_mail(
             'Код подтверждения',
@@ -151,15 +152,13 @@ def send_confirmation_code(request):
             [f'{email}'],
             fail_silently=False,
         )
-        return Response(
-            {'message': 'Пользователь уже существует'},
-            status=status.HTTP_200_OK
-        )
-    except User.DoesNotExist:
-        user = User.objects.create(
-            email=email,
-            username=username
-        )
+        return Response(serializer.data, status=status.HTTP_200_OK)
+    serializer = RegisterDataSerializer(data=request.data)
+    serializer.is_valid(raise_exception=True)
+    serializer.save()
+    username = serializer.validated_data['username']
+    email = serializer.validated_data['email']
+    user = get_object_or_404(User, username=username, email=email)
     confirmation_code = default_token_generator.make_token(user)
     send_mail(
         'Код подтверждения',
