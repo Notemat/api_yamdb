@@ -10,6 +10,7 @@ from rest_framework_simplejwt.tokens import RefreshToken, AccessToken
 from rest_framework import generics, viewsets, status
 from rest_framework.filters import SearchFilter
 
+
 from reviews.models import Category, Genre, Review, Title, User
 from api.serializers import (
     CategorySerializer,
@@ -141,9 +142,17 @@ def send_confirmation_code(request):
     username = serializer.validated_data['username']
     try:
         user = User.objects.get(email=email)
+        confirmation_code = default_token_generator.make_token(user)
+        send_mail(
+            'Код подтверждения',
+            f'{confirmation_code}',
+            f'{settings.ADMIN_EMAIL}',
+            [f'{email}'],
+            fail_silently=False,
+        )
         return Response(
-            {'Error': 'Пользователь уже существует'},
-            status=status.HTTP_400_BAD_REQUEST
+            {'message': 'Пользователь уже существует'},
+            status=status.HTTP_200_OK
         )
     except User.DoesNotExist:
         user = User.objects.create(
@@ -208,11 +217,11 @@ class UserViewSet(viewsets.ModelViewSet):
     def me(self, request):
         """Получение или обновление пользователя."""
         user = get_object_or_404(User, username=self.request.user)
-        serializer = MeSerializer(username=self.request.user.username)
-
         if request.method == 'PATCH':
             serializer = MeSerializer(user, data=request.data, partial=True)
             serializer.is_valid(raise_exception=True)
             serializer.save()
             return Response(serializer.data, status=status.HTTP_200_OK)
-        return Response(serializer.data)
+        else:
+            serializer = MeSerializer(user)
+            return Response(serializer.data)
