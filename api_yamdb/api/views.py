@@ -17,7 +17,8 @@ from api.serializers import (
     CommentSerializer,
     GenreSerializer,
     ReviewSerializer,
-    TitleSerializer,
+    TitleReadSerializer,
+    TitleWriteSerializer,
     MeSerializer,
     TokenSerializer,
     UserSerializer
@@ -75,10 +76,14 @@ class TitleViewSet(viewsets.ModelViewSet):
     """CRUD для модели Title."""
 
     queryset = Title.objects.prefetch_related('genre', 'category')
-    serializer_class = TitleSerializer
     permission_classes = (IsAdminPermission, )
     filter_backends = (SearchFilter, )
     search_fields = ('name', 'year', 'category__slug', 'genre__slug')
+
+    def get_serializer_class(self):
+        if self.request.method in ['POST', 'PATCH']:
+            return TitleWriteSerializer
+        return TitleReadSerializer
 
 
 class ReviewViewSet(viewsets.ModelViewSet):

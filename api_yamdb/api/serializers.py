@@ -32,11 +32,11 @@ class GenreSerializer(serializers.ModelSerializer):
         fields = ('name', 'slug')
 
 
-class TitleSerializer(serializers.ModelSerializer):
-    """Сериализатор для модели произведений."""
+class TitleReadSerializer(serializers.ModelSerializer):
+    """Сериализатор для чтения модели произведений."""
 
-    genre = GenreSerializer(many=True, required=True)
-    category = CategorySerializer(many=False, required=True)
+    genre = GenreSerializer(many=True, read_only=True)
+    category = CategorySerializer(read_only=True)
     rating = serializers.SerializerMethodField()
 
     class Meta:
@@ -46,7 +46,25 @@ class TitleSerializer(serializers.ModelSerializer):
 
     def get_rating(self, obj):
         rating = obj.reviews.aggregate(Avg('score'))['score__avg']
-        return int(rating)
+        return int(rating) if rating else 0
+
+
+class TitleWriteSerializer(serializers.ModelSerializer):
+    """Сериализатор для записи модели произведений."""
+
+    genre = serializers.SlugRelatedField(
+        many=True,
+        slug_field='slug',
+        queryset=Genre.objects.all()
+    )
+    category = serializers.SlugRelatedField(
+        slug_field='slug',
+        queryset=Category.objects.all()
+    )
+
+    class Meta:
+        model = Title
+        fields = ('id', 'name', 'year', 'description', 'genre', 'category')
 
     def validate(self, data):
         if 'year' in data and data['year'] > datetime.now().year:
@@ -59,9 +77,8 @@ class TitleSerializer(serializers.ModelSerializer):
         genres = validated_data.pop('genre')
         title = Title.objects.create(**validated_data)
         for genre in genres:
-            current_genre, status = Genre.objects.get(**genre)
             GenreTitle.objects.create(
-                title=title, genre=current_genre
+                title=title, genre=genre
             )
         return title
 
