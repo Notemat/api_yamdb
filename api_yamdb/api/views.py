@@ -4,11 +4,13 @@ from django.core.mail import send_mail
 from django.shortcuts import get_object_or_404
 from rest_framework.decorators import action, api_view
 from rest_framework.pagination import PageNumberPagination
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated, IsAdminUser
 from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import RefreshToken, AccessToken
 from rest_framework import generics, viewsets, status
 from rest_framework.filters import SearchFilter
+from rest_framework.exceptions import ValidationError
+
 
 from reviews.models import Category, Genre, Review, Title, User
 from api.serializers import (
@@ -25,6 +27,7 @@ from api.serializers import (
 from api.mixins import NotAllowedPutMixin
 from api.permissions import (
     IsAdminPermission,
+    IsAdminOrReadPermission,
     IsAuthorOrModeratorOrAdminPermission
 )
 
@@ -34,7 +37,7 @@ class CategoryListCreateAPIView(generics.ListCreateAPIView):
 
     queryset = Category.objects.all()
     serializer_class = CategorySerializer
-    permission_classes = (IsAdminPermission, )
+    permission_classes = (IsAdminOrReadPermission, )
     filter_backends = (SearchFilter, )
     search_fields = ('name', )
 
@@ -43,7 +46,7 @@ class CategoryDestroyAPIView(generics.DestroyAPIView):
     """delete для объекта модели Category."""
 
     serializer_class = CategorySerializer
-    permission_classes = (IsAdminPermission, )
+    permission_classes = (IsAdminOrReadPermission, )
 
     def get_queryset(self):
         queryset = get_object_or_404(Category, slug=self.kwargs['slug'])
@@ -55,7 +58,7 @@ class GenreListCreateAPIView(generics.ListCreateAPIView):
 
     queryset = Genre.objects.all()
     serializer_class = GenreSerializer
-    permission_classes = (IsAdminPermission, )
+    permission_classes = (IsAdminOrReadPermission, )
     filter_backends = (SearchFilter, )
     search_fields = ('name', )
 
@@ -64,24 +67,23 @@ class GenreDestroyAPIView(generics.DestroyAPIView):
     """delete для объекта модели Genre."""
 
     serializer_class = GenreSerializer
-    permission_classes = (IsAdminPermission, )
+    permission_classes = (IsAdminOrReadPermission, )
 
     def get_queryset(self):
         queryset = get_object_or_404(Genre, slug=self.kwargs['slug'])
         return queryset
 
 
-# возможно нехватает каких-то методов, например доп валидации
 class TitleViewSet(NotAllowedPutMixin, viewsets.ModelViewSet):
     """CRUD для модели Title."""
 
     queryset = Title.objects.prefetch_related('genre', 'category')
-    permission_classes = (IsAdminPermission, )
+    permission_classes = (IsAdminOrReadPermission, )
     filter_backends = (SearchFilter, )
     search_fields = ('name', 'year', 'category__slug', 'genre__slug')
 
     def get_serializer_class(self):
-        if self.request.method in ['POST', 'PATCH']:
+        if self.request.method in ['POST', 'PATCH', 'DELETE']:
             return TitleWriteSerializer
         return TitleReadSerializer
 
@@ -141,9 +143,17 @@ def send_confirmation_code(request):
     username = serializer.validated_data['username']
     try:
         user = User.objects.get(email=email)
+        confirmation_code = default_token_generator.make_token(user)
+        send_mail(
+            'Код подтверждения',
+            f'{confirmation_code}',
+            f'{settings.ADMIN_EMAIL}',
+            [f'{email}'],
+            fail_silently=False,
+        )
         return Response(
-            {'Error': 'Пользователь уже существует'},
-            status=status.HTTP_400_BAD_REQUEST
+            {'message': 'Пользователь уже существует'},
+            status=status.HTTP_200_OK
         )
     except User.DoesNotExist:
         user = User.objects.create(
@@ -189,7 +199,7 @@ def send_token(request):
     )
 
 
-class UserViewSet(viewsets.ModelViewSet):
+class UserViewSet(NotAllowedPutMixin, viewsets.ModelViewSet):
     """Вью-класс для пользователей."""
 
     queryset = User.objects.all()
@@ -197,7 +207,7 @@ class UserViewSet(viewsets.ModelViewSet):
     pagination_class = PageNumberPagination
     filter_backends = (SearchFilter, )
     search_fields = ('username', )
-    permission_classes = (IsAdminPermission,)
+    permission_classes = (IsAuthenticated, IsAdminPermission,)
     lookup_field = 'username'
 
     @action(
@@ -207,12 +217,15 @@ class UserViewSet(viewsets.ModelViewSet):
     )
     def me(self, request):
         """Получение или обновление пользователя."""
-        user = get_object_or_404(User, username=self.request.user)
-        serializer = MeSerializer(username=self.request.user.username)
-
+        if request.method == 'GET':
+            serializer = self.get_serializer(request.user)
+            return Response(serializer.data, status=status.HTTP_200_OK)
         if request.method == 'PATCH':
-            serializer = MeSerializer(user, data=request.data, partial=True)
+            serializer = self.get_serializer(
+                request.user, data=request.data, partial=True)
             serializer.is_valid(raise_exception=True)
+            if 'role' in request.data:
+                raise ValidationError({'role': 'Изменение роли недопустимо'})
             serializer.save()
             return Response(serializer.data, status=status.HTTP_200_OK)
-        return Response(serializer.data)
+        return Response(status=status.HTTP_405_METHOD_NOT_ALLOWED)
