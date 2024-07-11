@@ -5,7 +5,6 @@ from django.core.exceptions import ValidationError
 from django.core.validators import EmailValidator, RegexValidator
 from rest_framework import serializers
 from django.db.models import Avg
-from rest_framework.validators import UniqueTogetherValidator
 
 from reviews.models import (Category,
                             Comment,
