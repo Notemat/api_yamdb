@@ -2,7 +2,10 @@ from rest_framework import permissions
 
 
 class IsAdminOrReadPermission(permissions.BasePermission):
-    """Проверяет является ли пользователь admin."""
+    """
+    Проверяет является ли пользователь admin.
+    В противном случае разрешает только безопасные запросы.
+    """
 
     def has_permission(self, request, view):
         return (
@@ -13,6 +16,8 @@ class IsAdminOrReadPermission(permissions.BasePermission):
 
 
 class IsAdminPermission(permissions.BasePermission):
+    """Доступ только для admin и superuser."""
+
     def has_permission(self, request, view):
         return request.user.is_authenticated and (
             request.user.role == 'admin' or request.user.is_superuser

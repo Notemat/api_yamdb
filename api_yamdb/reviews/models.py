@@ -1,8 +1,8 @@
 """Модели приложения reviews."""
 
+from django.contrib.auth.models import AbstractUser
 from django.core.validators import MinValueValidator, MaxValueValidator
 from django.db import models
-from django.contrib.auth.models import AbstractUser
 
 
 LENGTH_TO_DISPLAY = 25

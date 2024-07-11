@@ -1,17 +1,17 @@
-from django.db.models import Avg
 from django.conf import settings
 from django.contrib.auth.tokens import default_token_generator
 from django.core.mail import send_mail
-from django_filters.rest_framework import DjangoFilterBackend
 from django.shortcuts import get_object_or_404
+
+from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.decorators import action, api_view
+from rest_framework.exceptions import ValidationError
+from rest_framework.filters import SearchFilter
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import RefreshToken, AccessToken
 from rest_framework import generics, viewsets, status
-from rest_framework.filters import SearchFilter
-from rest_framework.exceptions import ValidationError
 
 from api.filters import TitlesFilter
 from reviews.models import Category, Genre, Review, Title, User

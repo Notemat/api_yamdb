@@ -1,10 +1,10 @@
-import re
 from datetime import datetime
-
+from django.db.models import Avg
 from django.core.exceptions import ValidationError
 from django.core.validators import EmailValidator, RegexValidator
+import re
+
 from rest_framework import serializers
-from django.db.models import Avg
 
 from reviews.models import (Category,
                             Comment,
@@ -182,7 +182,7 @@ class TokenSerializer(serializers.Serializer):
 
 class InitialRegisterDataSerializer(serializers.Serializer):
     """Сериализатор входящих данных пользователя."""
-    
+
     username = serializers.CharField()
     email = serializers.EmailField()
 
