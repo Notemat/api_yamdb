@@ -160,7 +160,7 @@ class Comment(models.Model):
         User, on_delete=models.CASCADE,
         related_name='comments',
         verbose_name='Автор комментария'
-        )
+    )
     pub_date = models.DateTimeField(
         auto_now_add=True, verbose_name='Дата публикации'
     )
