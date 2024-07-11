@@ -27,6 +27,7 @@ from api.serializers import (
 from api.mixins import NotAllowedPutMixin
 from api.permissions import (
     IsAdminPermission,
+    IsAdminOrReadPermission,
     IsAuthorOrModeratorOrAdminPermission
 )
 
@@ -36,7 +37,7 @@ class CategoryListCreateAPIView(generics.ListCreateAPIView):
 
     queryset = Category.objects.all()
     serializer_class = CategorySerializer
-    permission_classes = (IsAdminPermission, )
+    permission_classes = (IsAdminOrReadPermission, )
     filter_backends = (SearchFilter, )
     search_fields = ('name', )
 
@@ -45,7 +46,7 @@ class CategoryDestroyAPIView(generics.DestroyAPIView):
     """delete для объекта модели Category."""
 
     serializer_class = CategorySerializer
-    permission_classes = (IsAdminPermission, )
+    permission_classes = (IsAdminOrReadPermission, )
 
     def get_queryset(self):
         queryset = get_object_or_404(Category, slug=self.kwargs['slug'])
@@ -57,7 +58,7 @@ class GenreListCreateAPIView(generics.ListCreateAPIView):
 
     queryset = Genre.objects.all()
     serializer_class = GenreSerializer
-    permission_classes = (IsAdminPermission, )
+    permission_classes = (IsAdminOrReadPermission, )
     filter_backends = (SearchFilter, )
     search_fields = ('name', )
 
@@ -66,7 +67,7 @@ class GenreDestroyAPIView(generics.DestroyAPIView):
     """delete для объекта модели Genre."""
 
     serializer_class = GenreSerializer
-    permission_classes = (IsAdminPermission, )
+    permission_classes = (IsAdminOrReadPermission, )
 
     def get_queryset(self):
         queryset = get_object_or_404(Genre, slug=self.kwargs['slug'])
@@ -77,7 +78,7 @@ class TitleViewSet(NotAllowedPutMixin, viewsets.ModelViewSet):
     """CRUD для модели Title."""
 
     queryset = Title.objects.prefetch_related('genre', 'category')
-    permission_classes = (IsAdminPermission, )
+    permission_classes = (IsAdminOrReadPermission, )
     filter_backends = (SearchFilter, )
     search_fields = ('name', 'year', 'category__slug', 'genre__slug')
 
@@ -198,7 +199,7 @@ def send_token(request):
     )
 
 
-class UserViewSet(viewsets.ModelViewSet):
+class UserViewSet(NotAllowedPutMixin, viewsets.ModelViewSet):
     """Вью-класс для пользователей."""
 
     queryset = User.objects.all()
