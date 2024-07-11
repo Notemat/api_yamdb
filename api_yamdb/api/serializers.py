@@ -180,28 +180,9 @@ class TokenSerializer(serializers.Serializer):
         model = User
 
 
-class MeSerializer(serializers.ModelSerializer):
-    """Сериализатор пользователя."""
-
-    role = serializers.CharField(read_only=True)
-
-    class Meta:
-        """Мета класс пользователя."""
-
-        model = User
-        fields = (
-            'bio',
-            'email',
-            'first_name',
-            'last_name',
-            'role',
-            'username'
-        )
-
-
 class InitialRegisterDataSerializer(serializers.Serializer):
     """Сериализатор входящих данных пользователя."""
-
+    
     username = serializers.CharField()
     email = serializers.EmailField()
 
