@@ -5,7 +5,6 @@ from django.core.exceptions import ValidationError
 from django.core.validators import EmailValidator, RegexValidator
 from rest_framework import serializers
 from django.db.models import Avg
-from rest_framework.validators import UniqueTogetherValidator
 
 from reviews.models import (Category,
                             Comment,
@@ -15,6 +14,7 @@ from reviews.models import (Category,
                             Title,
                             User
                             )
+
 
 class CategorySerializer(serializers.ModelSerializer):
     """Серилизатор для модели категорий."""
@@ -46,7 +46,7 @@ class TitleReadSerializer(serializers.ModelSerializer):
 
     def get_rating(self, obj):
         rating = obj.reviews.aggregate(Avg('score'))['score__avg']
-        return int(rating) if rating else 0
+        return int(rating) if rating else None
 
 
 class TitleWriteSerializer(serializers.ModelSerializer):
@@ -94,11 +94,6 @@ class ReviewSerializer(serializers.ModelSerializer):
         model = Review
         fields = ('id', 'text', 'author', 'score', 'pub_date')
         read_only_fields = ('id', 'author', 'pub_date')
-        validators = [
-            UniqueTogetherValidator(
-                queryset=Review.objects.all(), fields=('title', 'author')
-            )
-        ]
 
     def validate_score(self, value):
         """Проверка, что оценка находится в диапазоне от 1 до 10."""
