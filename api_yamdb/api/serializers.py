@@ -197,3 +197,26 @@ class MeSerializer(serializers.ModelSerializer):
             'role',
             'username'
         )
+
+
+class InitialRegisterDataSerializer(serializers.Serializer):
+    """Сериализатор входящих данных пользователя."""
+
+    username = serializers.CharField()
+    email = serializers.EmailField()
+
+
+class RegisterDataSerializer(serializers.ModelSerializer):
+    """Сериализатор для данных регистрации."""
+
+    def validate_username(self, value):
+        if not re.match(r'^[\w.@+-]+\Z', value):
+            raise ValidationError('Недопустимый никнейм.')
+        if value.lower() == 'me':
+            raise serializers.ValidationError(
+                'Нельзя использовать \'me\' в качестве логина')
+        return value
+
+    class Meta:
+        fields = ('username', 'email')
+        model = User
