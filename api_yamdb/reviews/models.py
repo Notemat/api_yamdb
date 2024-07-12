@@ -16,15 +16,15 @@ class User(AbstractUser):
     ADMIN = 'admin'
     MODERATOR = 'moderator'
     USER_ROLE = [
-        ('user', USER),
-        ('admin', ADMIN),
-        ('moderator', MODERATOR),
+        (USER, 'Пользователь'),
+        (ADMIN, 'Администратор'),
+        (MODERATOR, 'Модератор'),
     ]
 
+    max_role_length = max(len(role[1]) for role in USER_ROLE)
     username = models.CharField(
         max_length=150,
         unique=True,
-        blank=False,
         null=False
     )
     email = models.EmailField(
@@ -32,17 +32,17 @@ class User(AbstractUser):
         max_length=254,
         unique=True,
     )
-    first_name = models.CharField('Имя', max_length=50, blank=True)
-    last_name = models.CharField('Фамилия', max_length=50, blank=True)
-    bio = models.TextField('О себе', max_length=500, blank=True)
+    bio = models.TextField('О себе', blank=True)
     role = models.CharField(
-        'Роль', max_length=30, choices=USER_ROLE, default='user'
+        'Роль', max_length=max_role_length, choices=USER_ROLE, default='user'
     )
 
-    @property
-    def is_user(self):
-        """Проверка на пользователя."""
-        return self.role == self.USER
+    class Meta:
+        """Мета класс пользователя."""
+
+        ordering = ['username']
+        verbose_name = 'Пользователь'
+        verbose_name_plural = 'Пользователи'
 
     @property
     def is_admin(self):
@@ -54,12 +54,8 @@ class User(AbstractUser):
         """Проверка на модератора."""
         return self.role == self.MODERATOR
 
-    class Meta:
-        """Мета класс пользователя."""
-
-        ordering = ['username']
-        verbose_name = 'Пользователь'
-        verbose_name_plural = 'Пользователи'
+    def __str__(self):
+        return self.username
 
 
 class Title(models.Model):

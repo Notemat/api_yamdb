@@ -219,12 +219,10 @@ class UserViewSet(NotAllowedPutMixin, viewsets.ModelViewSet):
         if request.method == 'GET':
             serializer = self.get_serializer(request.user)
             return Response(serializer.data, status=status.HTTP_200_OK)
-        if request.method == 'PATCH':
+        else:
             serializer = self.get_serializer(
                 request.user, data=request.data, partial=True)
             serializer.is_valid(raise_exception=True)
-            if 'role' in request.data:
-                raise ValidationError({'role': 'Изменение роли недопустимо'})
+            serializer.validated_data['role'] = request.user.role
             serializer.save()
             return Response(serializer.data, status=status.HTTP_200_OK)
-        return Response(status=status.HTTP_405_METHOD_NOT_ALLOWED)

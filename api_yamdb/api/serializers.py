@@ -145,19 +145,12 @@ class UserSerializer(serializers.ModelSerializer):
             'username'
         )
         model = User
-        validators = [
-            EmailValidator,
-            RegexValidator(
-                regex=r'^[\w.@+-]',
-                message='Недопустимый никнейм',
-            )
-        ]
 
     def validate_username(self, value):
         """Валидация имени пользователя."""
         if not re.match(r'^[\w.@+-]+\Z', value):
             raise ValidationError('Недопустимый никнейм.')
-        if value.lower() == 'me':
+        if value == 'me':
             raise ValidationError('Имя пользователя "me" запрещено.')
         return value
 
@@ -172,12 +165,7 @@ class TokenSerializer(serializers.Serializer):
     """Сериализатор для токена."""
 
     username = serializers.SlugField(max_length=150, required=True)
-
-    class Meta:
-        """Мета класс токена."""
-
-        fields = '__all__'
-        model = User
+    confirmation_code = serializers.CharField()
 
 
 class InitialRegisterDataSerializer(serializers.Serializer):
@@ -190,17 +178,17 @@ class InitialRegisterDataSerializer(serializers.Serializer):
 class RegisterDataSerializer(serializers.ModelSerializer):
     """Сериализатор для данных регистрации."""
 
-    def validate_username(self, value):
-        if not re.match(r'^[\w.@+-]+\Z', value):
-            raise ValidationError('Недопустимый никнейм.')
-        if value.lower() == 'me':
-            raise serializers.ValidationError(
-                'Нельзя использовать \'me\' в качестве логина')
-        return value
-
     class Meta:
         fields = ('username', 'email')
         model = User
+
+    def validate_username(self, value):
+        if not re.match(r'^[\w.@+-]+\Z', value):
+            raise ValidationError('Недопустимый никнейм.')
+        if value == 'me':
+            raise serializers.ValidationError(
+                'Нельзя использовать \'me\' в качестве логина')
+        return value
 
 
 class TitleSerializer(serializers.ModelSerializer):
