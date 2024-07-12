@@ -71,7 +71,6 @@ class GenreDestroyAPIView(generics.DestroyAPIView):
         return queryset
 
 
-# возможно нехватает каких-то методов, например доп валидации
 class TitleViewSet(NotAllowedPutMixin, viewsets.ModelViewSet):
     """CRUD для модели Title."""
 
@@ -81,7 +80,7 @@ class TitleViewSet(NotAllowedPutMixin, viewsets.ModelViewSet):
     search_fields = ('name', 'year', 'category__slug', 'genre__slug')
 
     def get_serializer_class(self):
-        if self.request.method in ['POST', 'PATCH']:
+        if self.request.method in ['POST', 'PATCH', 'DELETE']:
             return TitleWriteSerializer
         return TitleReadSerializer
 
