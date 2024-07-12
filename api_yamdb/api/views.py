@@ -1,6 +1,7 @@
 from django.conf import settings
 from django.contrib.auth.tokens import default_token_generator
 from django.core.mail import send_mail
+from django_filters.rest_framework import DjangoFilterBackend
 from django.shortcuts import get_object_or_404
 from rest_framework.decorators import action, api_view
 from rest_framework.pagination import PageNumberPagination
@@ -44,12 +45,10 @@ class CategoryListCreateAPIView(generics.ListCreateAPIView):
 class CategoryDestroyAPIView(generics.DestroyAPIView):
     """delete для объекта модели Category."""
 
+    queryset = Category.objects.all()
     serializer_class = CategorySerializer
     permission_classes = (IsAdminPermission, )
-
-    def get_queryset(self):
-        queryset = get_object_or_404(Category, slug=self.kwargs['slug'])
-        return queryset
+    lookup_field = 'slug'
 
 
 class GenreListCreateAPIView(generics.ListCreateAPIView):
@@ -65,12 +64,10 @@ class GenreListCreateAPIView(generics.ListCreateAPIView):
 class GenreDestroyAPIView(generics.DestroyAPIView):
     """delete для объекта модели Genre."""
 
+    queryset = Genre.objects.all()
     serializer_class = GenreSerializer
     permission_classes = (IsAdminPermission, )
-
-    def get_queryset(self):
-        queryset = get_object_or_404(Genre, slug=self.kwargs['slug'])
-        return queryset
+    lookup_field = 'slug'
 
 
 class TitleViewSet(NotAllowedPutMixin, viewsets.ModelViewSet):
@@ -78,8 +75,8 @@ class TitleViewSet(NotAllowedPutMixin, viewsets.ModelViewSet):
 
     queryset = Title.objects.prefetch_related('genre', 'category')
     permission_classes = (IsAdminPermission, )
-    filter_backends = (SearchFilter, )
-    search_fields = ('name', 'year', 'category__slug', 'genre__slug')
+    filter_backends = (DjangoFilterBackend, )
+    filterset_fields = ('name', 'year', 'category__slug', 'genre__slug')
 
     def get_serializer_class(self):
         if self.request.method in ['POST', 'PATCH', 'DELETE']:
