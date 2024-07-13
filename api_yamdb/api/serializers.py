@@ -1,19 +1,21 @@
+import re
 from datetime import datetime
-from django.db.models import Avg
+
 from django.core.exceptions import ValidationError
 from django.core.validators import EmailValidator, RegexValidator
-import re
+from django.db.models import Avg
 
 from rest_framework import serializers
 
-from reviews.models import (Category,
-                            Comment,
-                            Genre,
-                            GenreTitle,
-                            Review,
-                            Title,
-                            User
-                            )
+from reviews.models import (
+    Category,
+    Comment,
+    Genre,
+    GenreTitle,
+    Review,
+    Title,
+    User
+)
 
 
 class CategorySerializer(serializers.ModelSerializer):
@@ -37,16 +39,12 @@ class TitleReadSerializer(serializers.ModelSerializer):
 
     genre = GenreSerializer(many=True, read_only=True)
     category = CategorySerializer(read_only=True)
-    rating = serializers.SerializerMethodField()
+    rating = serializers.FloatField(read_only=True)
 
     class Meta:
         model = Title
         fields = ('id', 'name', 'year', 'rating',
                   'description', 'genre', 'category')
-
-    def get_rating(self, obj):
-        rating = obj.reviews.aggregate(Avg('score'))['score__avg']
-        return int(rating) if rating else None
 
 
 class TitleWriteSerializer(serializers.ModelSerializer):

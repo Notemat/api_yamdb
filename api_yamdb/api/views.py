@@ -1,6 +1,7 @@
 from django.conf import settings
 from django.contrib.auth.tokens import default_token_generator
 from django.core.mail import send_mail
+from django.db.models import Avg
 from django.shortcuts import get_object_or_404
 
 from django_filters.rest_framework import DjangoFilterBackend
@@ -8,7 +9,9 @@ from rest_framework.decorators import action, api_view
 from rest_framework.exceptions import ValidationError
 from rest_framework.filters import SearchFilter
 from rest_framework.pagination import PageNumberPagination
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import (
+    IsAuthenticated, IsAuthenticatedOrReadOnly
+)
 from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import RefreshToken, AccessToken
 from rest_framework import generics, viewsets, status
@@ -77,11 +80,16 @@ class GenreDestroyAPIView(generics.DestroyAPIView):
 class TitleViewSet(NotAllowedPutMixin, viewsets.ModelViewSet):
     """CRUD для модели Title."""
 
-    queryset = Title.objects.prefetch_related('genre', 'category')
+    queryset = Title.objects.prefetch_related('genre', 'category').annotate(
+        rating=Avg('reviews__score')
+    ).order_by('id')
     serializer_class = TitleSerializer
     permission_classes = (IsAdminOrReadPermission, )
     filter_backends = (DjangoFilterBackend, )
     filterset_class = TitlesFilter
+
+    def get_queryset(self):
+        return super().get_queryset()
 
     def get_serializer_class(self):
         if self.request.method in ['POST', 'PATCH', 'DELETE']:
@@ -96,7 +104,10 @@ class ReviewViewSet(NotAllowedPutMixin, viewsets.ModelViewSet):
     perform_create для сохранения автора и произведения.
     """
     serializer_class = ReviewSerializer
-    permission_classes = (IsAuthorOrModeratorOrAdminPermission, )
+    permission_classes = (
+        IsAuthorOrModeratorOrAdminPermission,
+        IsAuthenticatedOrReadOnly
+    )
 
     def get_title_object(self):
         title_id = self.kwargs.get('title_id')
@@ -119,7 +130,10 @@ class CommentViewSet(NotAllowedPutMixin, viewsets.ModelViewSet):
     """
 
     serializer_class = CommentSerializer
-    permission_classes = (IsAuthorOrModeratorOrAdminPermission, )
+    permission_classes = (
+        IsAuthorOrModeratorOrAdminPermission,
+        IsAuthenticatedOrReadOnly
+    )
 
     def get_review_object(self):
         review_id = self.kwargs.get('review_id')
