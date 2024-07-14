@@ -77,14 +77,11 @@ class TitleWriteSerializer(serializers.ModelSerializer):
             )
         return value
 
-    def create(self, validated_data):
-        genres = validated_data.pop('genre')
-        title = Title.objects.create(**validated_data)
-        for genre in genres:
-            GenreTitle.objects.create(
-                title=title, genre=genre
-            )
-        return title
+    def to_representation(self, instance):
+        """Метод для возвращения данных, как при GET запросе."""
+        instance.rating = getattr(instance, 'rating', 0)
+        serializer = TitleReadSerializer(instance)
+        return serializer.data
 
 
 class ReviewSerializer(serializers.ModelSerializer):
