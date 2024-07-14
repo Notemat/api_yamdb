@@ -1,4 +1,5 @@
 """Модели приложения reviews."""
+from datetime import datetime
 
 from django.contrib.auth.models import AbstractUser
 from django.core.validators import MinValueValidator, MaxValueValidator
@@ -64,7 +65,10 @@ class User(AbstractUser):
 
 class Title(models.Model):
     name = models.CharField(max_length=256, verbose_name='Название')
-    year = models.IntegerField(verbose_name='Год выпуска')
+    year = models.PositiveSmallIntegerField(
+        validators=[MaxValueValidator(datetime.now().year)],
+        verbose_name='Год выпуска'
+    )
     description = models.TextField(verbose_name='Описание')
     genre = models.ManyToManyField('Genre', through='GenreTitle',
                                    verbose_name='Жанр')
@@ -73,7 +77,7 @@ class Title(models.Model):
                                  verbose_name='Категория')
 
     class Meta:
-        ordering = ['id']
+        # ordering = ['year']
         verbose_name = 'Произведение'
         verbose_name_plural = 'Произведения'
 
