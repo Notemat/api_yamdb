@@ -7,10 +7,11 @@ from django.db import models
 
 from reviews.constants import (
     LENGTH_TO_DISPLAY,
-    MAX_RATING_VALUE,
-    MIN_RATING_VALUE,
+    MAX_SCORE_VALUE,
+    MIN_SCORE_VALUE,
 
 )
+from reviews.mixins import CategoryGenreMixin
 
 
 class User(AbstractUser):
@@ -84,20 +85,10 @@ class Title(models.Model):
         return self.name[:LENGTH_TO_DISPLAY]
 
 
-class CategoryGenreMixin(models.Model):
-    name = models.CharField(max_length=256, verbose_name='Название')
-    slug = models.SlugField(unique=True, verbose_name='Слаг')
-
-    class Meta:
-        ordering = ['slug']
-
-    def __str__(self):
-        return self.name[:LENGTH_TO_DISPLAY]
-
-
 class Category(CategoryGenreMixin):
 
     class Meta:
+        ordering = ['slug']
         verbose_name = 'Категория'
         verbose_name_plural = 'Категории'
 
@@ -108,6 +99,7 @@ class Category(CategoryGenreMixin):
 class Genre(CategoryGenreMixin):
 
     class Meta:
+        ordering = ['slug']
         verbose_name = 'Жанр'
         verbose_name_plural = 'Жанры'
 
@@ -139,8 +131,8 @@ class Review(models.Model):
     score = models.PositiveSmallIntegerField(
         verbose_name='Оценка',
         validators=[
-            MinValueValidator(MIN_RATING_VALUE),
-            MaxValueValidator(MAX_RATING_VALUE)
+            MinValueValidator(MIN_SCORE_VALUE),
+            MaxValueValidator(MAX_SCORE_VALUE)
         ]
     )
     pub_date = models.DateTimeField(

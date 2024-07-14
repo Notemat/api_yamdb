@@ -7,8 +7,8 @@ from django.core.validators import EmailValidator, RegexValidator
 from rest_framework import serializers
 
 from reviews.constants import (
-    MAX_RATING_VALUE,
-    MIN_RATING_VALUE,
+    MAX_SCORE_VALUE,
+    MIN_SCORE_VALUE,
 )
 from reviews.models import (
     Category,
@@ -100,10 +100,10 @@ class ReviewSerializer(serializers.ModelSerializer):
 
     def validate_score(self, value):
         """Проверка, что оценка находится в диапазоне от 1 до 10."""
-        if not MIN_RATING_VALUE <= value <= MAX_RATING_VALUE:
+        if not MIN_SCORE_VALUE <= value <= MAX_SCORE_VALUE:
             raise serializers.ValidationError(
                 f'Оценка должна быть в диапазоне от '
-                f'{MIN_RATING_VALUE} до {MAX_RATING_VALUE}.'
+                f'{MIN_SCORE_VALUE} до {MAX_SCORE_VALUE}.'
             )
         return value
 
