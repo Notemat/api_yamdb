@@ -39,28 +39,27 @@ from api.permissions import (
 )
 
 
-class CategoryViewSet(CreateModelMixin, DestroyModelMixin,
-                      ListModelMixin, viewsets.GenericViewSet):
+class CategoryGenreCommon(CreateModelMixin, DestroyModelMixin,
+                          ListModelMixin, viewsets.GenericViewSet):
+
+    permission_classes = (IsAdminOrReadPermission, )
+    filter_backends = (SearchFilter, )
+    search_fields = ('name', )
+    lookup_field = 'slug'
+
+
+class CategoryViewSet(CategoryGenreCommon):
     """list/create/delete для модели Category."""
 
     queryset = Category.objects.all()
     serializer_class = CategorySerializer
-    permission_classes = (IsAdminOrReadPermission, )
-    filter_backends = (SearchFilter, )
-    search_fields = ('name', )
-    lookup_field = 'slug'
 
 
-class GenreViewSet(CreateModelMixin, DestroyModelMixin,
-                   ListModelMixin, viewsets.GenericViewSet):
+class GenreViewSet(CategoryGenreCommon):
     """list/create/delete для модели Genre."""
 
     queryset = Genre.objects.all()
     serializer_class = GenreSerializer
-    permission_classes = (IsAdminOrReadPermission, )
-    filter_backends = (SearchFilter, )
-    search_fields = ('name', )
-    lookup_field = 'slug'
 
 
 class TitleViewSet(NotAllowedPutMixin, viewsets.ModelViewSet):
