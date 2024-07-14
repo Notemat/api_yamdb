@@ -5,8 +5,7 @@ from rest_framework.routers import DefaultRouter
 from api.views import (
     CategoryViewSet,
     CommentViewSet,
-    GenreListCreateAPIView,
-    GenreDestroyAPIView,
+    GenreViewSet,
     ReviewViewSet,
     send_confirmation_code,
     send_token,
@@ -25,10 +24,9 @@ router.register(
 router.register('titles', TitleViewSet)
 router.register('users', UserViewSet)
 router.register('categories', CategoryViewSet)
+router.register('genres', GenreViewSet)
 
 urlpatterns = [
-    path('genres/', GenreListCreateAPIView.as_view()),
-    path('genres/<slug:slug>/', GenreDestroyAPIView.as_view()),
     path('auth/signup/', send_confirmation_code),
     path('auth/token/', send_token),
     path('', include(router.urls)),

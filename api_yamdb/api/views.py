@@ -39,9 +39,10 @@ from api.permissions import (
 )
 
 
-class CategoryViewSet(ListModelMixin, CreateModelMixin,
-                      DestroyModelMixin, viewsets.GenericViewSet):
+class CategoryViewSet(CreateModelMixin, DestroyModelMixin,
+                      ListModelMixin, viewsets.GenericViewSet):
     """list/create/delete для модели Category."""
+
     queryset = Category.objects.all()
     serializer_class = CategorySerializer
     permission_classes = (IsAdminOrReadPermission, )
@@ -50,22 +51,15 @@ class CategoryViewSet(ListModelMixin, CreateModelMixin,
     lookup_field = 'slug'
 
 
-class GenreListCreateAPIView(generics.ListCreateAPIView):
-    """list and create для модели Genre."""
+class GenreViewSet(CreateModelMixin, DestroyModelMixin,
+                   ListModelMixin, viewsets.GenericViewSet):
+    """list/create/delete для модели Genre."""
 
     queryset = Genre.objects.all()
     serializer_class = GenreSerializer
     permission_classes = (IsAdminOrReadPermission, )
     filter_backends = (SearchFilter, )
     search_fields = ('name', )
-
-
-class GenreDestroyAPIView(generics.DestroyAPIView):
-    """delete для объекта модели Genre."""
-
-    queryset = Genre.objects.all()
-    serializer_class = GenreSerializer
-    permission_classes = (IsAdminPermission, )
     lookup_field = 'slug'
 
 
