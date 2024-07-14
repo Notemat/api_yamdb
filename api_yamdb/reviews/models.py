@@ -5,9 +5,12 @@ from django.contrib.auth.models import AbstractUser
 from django.core.validators import MinValueValidator, MaxValueValidator
 from django.db import models
 
+from reviews.constants import (
+    LENGTH_TO_DISPLAY,
+    MAX_RATING_VALUE,
+    MIN_RATING_VALUE,
 
-LENGTH_TO_DISPLAY = 25
-"""Длина для отображения текста в админке."""
+)
 
 
 class User(AbstractUser):
@@ -137,9 +140,13 @@ class Review(models.Model):
         related_name='reviews',
         verbose_name='Автор'
     )
-    score = models.IntegerField(
+    score = models.PositiveSmallIntegerField(
         verbose_name='Оценка',
-        validators=[MinValueValidator(1), MaxValueValidator(10)])
+        validators=[
+            MinValueValidator(MIN_RATING_VALUE),
+            MaxValueValidator(MAX_RATING_VALUE)
+        ]
+    )
     pub_date = models.DateTimeField(
         auto_now_add=True, verbose_name='Дата публикации'
     )

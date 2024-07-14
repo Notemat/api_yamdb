@@ -24,12 +24,6 @@ class IsAdminPermission(permissions.BasePermission):
 class IsAuthorOrModeratorOrAdminPermission(permissions.BasePermission):
     """Разрешены безопасные запросы и от admin/moderator/author."""
 
-    def has_permission(self, request, view):
-        return (
-            request.method in permissions.SAFE_METHODS
-            or request.user.is_authenticated
-        )
-
     def has_object_permission(self, request, view, obj):
         return (
             request.method in permissions.SAFE_METHODS

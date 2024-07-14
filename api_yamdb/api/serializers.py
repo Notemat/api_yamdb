@@ -1,19 +1,24 @@
+import re
 from datetime import datetime
-from django.db.models import Avg
+
 from django.core.exceptions import ValidationError
 from django.core.validators import EmailValidator, RegexValidator
-import re
 
 from rest_framework import serializers
 
-from reviews.models import (Category,
-                            Comment,
-                            Genre,
-                            GenreTitle,
-                            Review,
-                            Title,
-                            User
-                            )
+from reviews.constants import (
+    MAX_RATING_VALUE,
+    MIN_RATING_VALUE,
+)
+from reviews.models import (
+    Category,
+    Comment,
+    Genre,
+    GenreTitle,
+    Review,
+    Title,
+    User
+)
 
 
 class CategorySerializer(serializers.ModelSerializer):
@@ -92,13 +97,13 @@ class ReviewSerializer(serializers.ModelSerializer):
     class Meta:
         model = Review
         fields = ('id', 'text', 'author', 'score', 'pub_date')
-        read_only_fields = ('id', 'author', 'pub_date')
 
     def validate_score(self, value):
         """Проверка, что оценка находится в диапазоне от 1 до 10."""
-        if not 1 <= value <= 10:
+        if not MIN_RATING_VALUE <= value <= MAX_RATING_VALUE:
             raise serializers.ValidationError(
-                "Оценка должна быть в диапазоне от 1 до 10."
+                f'Оценка должна быть в диапазоне от '
+                f'{MIN_RATING_VALUE} до {MAX_RATING_VALUE}.'
             )
         return value
 
@@ -126,7 +131,6 @@ class CommentSerializer(serializers.ModelSerializer):
     class Meta:
         model = Comment
         fields = ('id', 'text', 'author', 'pub_date')
-        read_only_fields = ('id', 'author', 'pub_date')
 
 
 class UserSerializer(serializers.ModelSerializer):

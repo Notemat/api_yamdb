@@ -12,7 +12,11 @@ from rest_framework.mixins import (CreateModelMixin,
                                    DestroyModelMixin,
                                    ListModelMixin)
 from rest_framework.pagination import PageNumberPagination
-from rest_framework.permissions import IsAuthenticated, SAFE_METHODS
+from rest_framework.permissions import (
+    IsAuthenticated,
+    IsAuthenticatedOrReadOnly,
+    SAFE_METHODS,
+)
 from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import RefreshToken, AccessToken
 from rest_framework import viewsets, status
@@ -71,6 +75,9 @@ class TitleViewSet(NotAllowedPutMixin, viewsets.ModelViewSet):
     filter_backends = (DjangoFilterBackend, )
     filterset_class = TitlesFilter
 
+    def get_queryset(self):
+        return super().get_queryset()
+
     def get_serializer_class(self):
         if self.request.method in SAFE_METHODS:
             return TitleReadSerializer
@@ -85,7 +92,10 @@ class ReviewViewSet(NotAllowedPutMixin, viewsets.ModelViewSet):
     """
 
     serializer_class = ReviewSerializer
-    permission_classes = (IsAuthorOrModeratorOrAdminPermission, )
+    permission_classes = (
+        IsAuthorOrModeratorOrAdminPermission,
+        IsAuthenticatedOrReadOnly
+    )
 
     def get_title_object(self):
         title_id = self.kwargs.get('title_id')
@@ -108,7 +118,10 @@ class CommentViewSet(NotAllowedPutMixin, viewsets.ModelViewSet):
     """
 
     serializer_class = CommentSerializer
-    permission_classes = (IsAuthorOrModeratorOrAdminPermission, )
+    permission_classes = (
+        IsAuthorOrModeratorOrAdminPermission,
+        IsAuthenticatedOrReadOnly
+    )
 
     def get_review_object(self):
         review_id = self.kwargs.get('review_id')
