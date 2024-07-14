@@ -92,9 +92,6 @@ class Category(CategoryGenreMixin):
         verbose_name = 'Категория'
         verbose_name_plural = 'Категории'
 
-    def __str__(self):
-        return self.name[:LENGTH_TO_DISPLAY]
-
 
 class Genre(CategoryGenreMixin):
 
