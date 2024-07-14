@@ -1,12 +1,16 @@
 """Модели приложения reviews."""
+from datetime import datetime
 
 from django.contrib.auth.models import AbstractUser
 from django.core.validators import MinValueValidator, MaxValueValidator
 from django.db import models
 
+from reviews.constants import (
+    LENGTH_TO_DISPLAY,
+    MAX_RATING_VALUE,
+    MIN_RATING_VALUE,
 
-LENGTH_TO_DISPLAY = 25
-"""Длина для отображения текста в админке."""
+)
 
 
 class User(AbstractUser):
@@ -60,7 +64,10 @@ class User(AbstractUser):
 
 class Title(models.Model):
     name = models.CharField(max_length=256, verbose_name='Название')
-    year = models.IntegerField(verbose_name='Год выпуска')
+    year = models.PositiveSmallIntegerField(
+        validators=[MaxValueValidator(datetime.now().year)],
+        verbose_name='Год выпуска'
+    )
     description = models.TextField(verbose_name='Описание')
     genre = models.ManyToManyField('Genre', through='GenreTitle',
                                    verbose_name='Жанр')
@@ -69,7 +76,7 @@ class Title(models.Model):
                                  verbose_name='Категория')
 
     class Meta:
-        ordering = ['id']
+        ordering = ['year']
         verbose_name = 'Произведение'
         verbose_name_plural = 'Произведения'
 
@@ -77,12 +84,20 @@ class Title(models.Model):
         return self.name[:LENGTH_TO_DISPLAY]
 
 
-class Category(models.Model):
+class CategoryGenreMixin(models.Model):
     name = models.CharField(max_length=256, verbose_name='Название')
-    slug = models.SlugField(max_length=50, unique=True, verbose_name='Слаг')
+    slug = models.SlugField(unique=True, verbose_name='Слаг')
 
     class Meta:
         ordering = ['slug']
+
+    def __str__(self):
+        return self.name[:LENGTH_TO_DISPLAY]
+
+
+class Category(CategoryGenreMixin):
+
+    class Meta:
         verbose_name = 'Категория'
         verbose_name_plural = 'Категории'
 
@@ -90,17 +105,11 @@ class Category(models.Model):
         return self.name[:LENGTH_TO_DISPLAY]
 
 
-class Genre(models.Model):
-    name = models.CharField(max_length=256, verbose_name='Название')
-    slug = models.SlugField(max_length=50, unique=True, verbose_name='Слаг')
+class Genre(CategoryGenreMixin):
 
     class Meta:
-        ordering = ['slug']
         verbose_name = 'Жанр'
         verbose_name_plural = 'Жанры'
-
-    def __str__(self):
-        return self.name[:LENGTH_TO_DISPLAY]
 
 
 class GenreTitle(models.Model):
@@ -127,9 +136,13 @@ class Review(models.Model):
         related_name='reviews',
         verbose_name='Автор'
     )
-    score = models.IntegerField(
+    score = models.PositiveSmallIntegerField(
         verbose_name='Оценка',
-        validators=[MinValueValidator(1), MaxValueValidator(10)])
+        validators=[
+            MinValueValidator(MIN_RATING_VALUE),
+            MaxValueValidator(MAX_RATING_VALUE)
+        ]
+    )
     pub_date = models.DateTimeField(
         auto_now_add=True, verbose_name='Дата публикации'
     )

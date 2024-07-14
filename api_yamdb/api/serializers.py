@@ -1,19 +1,24 @@
+import re
 from datetime import datetime
-from django.db.models import Avg
+
 from django.core.exceptions import ValidationError
 from django.core.validators import EmailValidator, RegexValidator
-import re
 
 from rest_framework import serializers
 
-from reviews.models import (Category,
-                            Comment,
-                            Genre,
-                            GenreTitle,
-                            Review,
-                            Title,
-                            User
-                            )
+from reviews.constants import (
+    MAX_RATING_VALUE,
+    MIN_RATING_VALUE,
+)
+from reviews.models import (
+    Category,
+    Comment,
+    Genre,
+    GenreTitle,
+    Review,
+    Title,
+    User
+)
 
 
 class CategorySerializer(serializers.ModelSerializer):
@@ -37,16 +42,12 @@ class TitleReadSerializer(serializers.ModelSerializer):
 
     genre = GenreSerializer(many=True, read_only=True)
     category = CategorySerializer(read_only=True)
-    rating = serializers.SerializerMethodField()
+    rating = serializers.IntegerField()
 
     class Meta:
         model = Title
         fields = ('id', 'name', 'year', 'rating',
                   'description', 'genre', 'category')
-
-    def get_rating(self, obj):
-        rating = obj.reviews.aggregate(Avg('score'))['score__avg']
-        return int(rating) if rating else None
 
 
 class TitleWriteSerializer(serializers.ModelSerializer):
@@ -55,23 +56,26 @@ class TitleWriteSerializer(serializers.ModelSerializer):
     genre = serializers.SlugRelatedField(
         many=True,
         slug_field='slug',
-        queryset=Genre.objects.all()
+        queryset=Genre.objects.all(),
+        required=True,
+        allow_empty=False
     )
     category = serializers.SlugRelatedField(
         slug_field='slug',
         queryset=Category.objects.all()
     )
+    year = serializers.IntegerField(required=True)
 
     class Meta:
         model = Title
         fields = ('id', 'name', 'year', 'description', 'genre', 'category')
 
-    def validate(self, data):
-        if 'year' in data and data['year'] > datetime.now().year:
+    def validate_year(self, value):
+        if value > datetime.now().year:
             raise serializers.ValidationError(
                 'Год выпуска не может быть больше текущего.'
             )
-        return data
+        return value
 
     def create(self, validated_data):
         genres = validated_data.pop('genre')
@@ -93,13 +97,13 @@ class ReviewSerializer(serializers.ModelSerializer):
     class Meta:
         model = Review
         fields = ('id', 'text', 'author', 'score', 'pub_date')
-        read_only_fields = ('id', 'author', 'pub_date')
 
     def validate_score(self, value):
         """Проверка, что оценка находится в диапазоне от 1 до 10."""
-        if not 1 <= value <= 10:
+        if not MIN_RATING_VALUE <= value <= MAX_RATING_VALUE:
             raise serializers.ValidationError(
-                "Оценка должна быть в диапазоне от 1 до 10."
+                f'Оценка должна быть в диапазоне от '
+                f'{MIN_RATING_VALUE} до {MAX_RATING_VALUE}.'
             )
         return value
 
@@ -127,7 +131,6 @@ class CommentSerializer(serializers.ModelSerializer):
     class Meta:
         model = Comment
         fields = ('id', 'text', 'author', 'pub_date')
-        read_only_fields = ('id', 'author', 'pub_date')
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -189,15 +192,3 @@ class RegisterDataSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError(
                 'Нельзя использовать \'me\' в качестве логина')
         return value
-
-
-class TitleSerializer(serializers.ModelSerializer):
-    """Сериализатор для произведений."""
-    rating = serializers.IntegerField(read_only=True)
-    genre = GenreSerializer(many=True, source='genre')
-    category = CategorySerializer()
-
-    class Meta:
-        model = Title
-        fields = ('id', 'name', 'year', 'rating', 'description', 'genre',
-                  'category')
