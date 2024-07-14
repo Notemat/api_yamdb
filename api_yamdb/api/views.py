@@ -8,6 +8,9 @@ from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.decorators import action, api_view
 from rest_framework.exceptions import ValidationError
 from rest_framework.filters import SearchFilter
+from rest_framework.mixins import (CreateModelMixin,
+                                   DestroyModelMixin,
+                                   ListModelMixin)
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
@@ -26,8 +29,7 @@ from api.serializers import (
     InitialRegisterDataSerializer,
     TokenSerializer,
     UserSerializer,
-    RegisterDataSerializer,
-    TitleSerializer
+    RegisterDataSerializer
 )
 from api.mixins import NotAllowedPutMixin
 from api.permissions import (
@@ -37,22 +39,14 @@ from api.permissions import (
 )
 
 
-class CategoryListCreateAPIView(generics.ListCreateAPIView):
-    """list and create для модели Category."""
-
+class CategoryViewSet(ListModelMixin, CreateModelMixin,
+                      DestroyModelMixin, viewsets.GenericViewSet):
+    """list/create/delete для модели Category."""
     queryset = Category.objects.all()
     serializer_class = CategorySerializer
     permission_classes = (IsAdminOrReadPermission, )
     filter_backends = (SearchFilter, )
     search_fields = ('name', )
-
-
-class CategoryDestroyAPIView(generics.DestroyAPIView):
-    """delete для объекта модели Category."""
-
-    queryset = Category.objects.all()
-    serializer_class = CategorySerializer
-    permission_classes = (IsAdminPermission, )
     lookup_field = 'slug'
 
 
@@ -80,7 +74,6 @@ class TitleViewSet(NotAllowedPutMixin, viewsets.ModelViewSet):
 
     queryset = Title.objects.annotate(
         rating=Avg('reviews__score')).order_by('pk')
-    serializer_class = TitleSerializer
     permission_classes = (IsAdminOrReadPermission, )
     filter_backends = (DjangoFilterBackend, )
     filterset_class = TitlesFilter
