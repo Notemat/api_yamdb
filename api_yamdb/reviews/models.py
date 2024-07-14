@@ -7,8 +7,8 @@ from django.db import models
 
 from reviews.constants import (
     LENGTH_TO_DISPLAY,
-    MAX_RATING_VALUE,
-    MIN_RATING_VALUE,
+    MAX_SCORE_VALUE,
+    MIN_SCORE_VALUE,
 
 )
 
@@ -139,8 +139,8 @@ class Review(models.Model):
     score = models.PositiveSmallIntegerField(
         verbose_name='Оценка',
         validators=[
-            MinValueValidator(MIN_RATING_VALUE),
-            MaxValueValidator(MAX_RATING_VALUE)
+            MinValueValidator(MIN_SCORE_VALUE),
+            MaxValueValidator(MAX_SCORE_VALUE)
         ]
     )
     pub_date = models.DateTimeField(
