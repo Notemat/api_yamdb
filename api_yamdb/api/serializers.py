@@ -3,7 +3,6 @@ from datetime import datetime
 
 from django.core.exceptions import ValidationError
 from django.core.validators import EmailValidator, RegexValidator
-from django.db.models import Avg
 
 from rest_framework import serializers
 
@@ -43,7 +42,7 @@ class TitleReadSerializer(serializers.ModelSerializer):
 
     genre = GenreSerializer(many=True, read_only=True)
     category = CategorySerializer(read_only=True)
-    rating = serializers.FloatField(read_only=True)
+    rating = serializers.IntegerField(read_only=True)
 
     class Meta:
         model = Title
