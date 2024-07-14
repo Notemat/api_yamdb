@@ -1,6 +1,7 @@
 from django.conf import settings
 from django.contrib.auth.tokens import default_token_generator
 from django.core.mail import send_mail
+from django.db.models import Avg
 from django.shortcuts import get_object_or_404
 
 from django_filters.rest_framework import DjangoFilterBackend
@@ -77,7 +78,8 @@ class GenreDestroyAPIView(generics.DestroyAPIView):
 class TitleViewSet(NotAllowedPutMixin, viewsets.ModelViewSet):
     """CRUD для модели Title."""
 
-    queryset = Title.objects.prefetch_related('genre', 'category')
+    queryset = Title.objects.annotate(
+        rating=Avg('reviews__score')).order_by('pk')
     serializer_class = TitleSerializer
     permission_classes = (IsAdminOrReadPermission, )
     filter_backends = (DjangoFilterBackend, )
