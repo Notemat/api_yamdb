@@ -1,17 +1,21 @@
 from django.conf import settings
 from django.contrib.auth.tokens import default_token_generator
 from django.core.mail import send_mail
+from django.db.models import Avg
 from django.shortcuts import get_object_or_404
 
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.decorators import action, api_view
 from rest_framework.exceptions import ValidationError
 from rest_framework.filters import SearchFilter
+from rest_framework.mixins import (CreateModelMixin,
+                                   DestroyModelMixin,
+                                   ListModelMixin)
 from rest_framework.pagination import PageNumberPagination
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated, SAFE_METHODS
 from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import RefreshToken, AccessToken
-from rest_framework import generics, viewsets, status
+from rest_framework import viewsets, status
 
 from api.filters import TitlesFilter
 from reviews.models import Category, Genre, Review, Title, User
@@ -25,8 +29,7 @@ from api.serializers import (
     InitialRegisterDataSerializer,
     TokenSerializer,
     UserSerializer,
-    RegisterDataSerializer,
-    TitleSerializer
+    RegisterDataSerializer
 )
 from api.mixins import NotAllowedPutMixin
 from api.permissions import (
@@ -36,57 +39,42 @@ from api.permissions import (
 )
 
 
-class CategoryListCreateAPIView(generics.ListCreateAPIView):
-    """list and create для модели Category."""
+class CategoryGenreCommon(CreateModelMixin, DestroyModelMixin,
+                          ListModelMixin, viewsets.GenericViewSet):
 
-    queryset = Category.objects.all()
-    serializer_class = CategorySerializer
     permission_classes = (IsAdminOrReadPermission, )
     filter_backends = (SearchFilter, )
     search_fields = ('name', )
+    lookup_field = 'slug'
 
 
-class CategoryDestroyAPIView(generics.DestroyAPIView):
-    """delete для объекта модели Category."""
+class CategoryViewSet(CategoryGenreCommon):
+    """list/create/delete для модели Category."""
 
     queryset = Category.objects.all()
     serializer_class = CategorySerializer
-    permission_classes = (IsAdminPermission, )
-    lookup_field = 'slug'
 
 
-class GenreListCreateAPIView(generics.ListCreateAPIView):
-    """list and create для модели Genre."""
+class GenreViewSet(CategoryGenreCommon):
+    """list/create/delete для модели Genre."""
 
     queryset = Genre.objects.all()
     serializer_class = GenreSerializer
-    permission_classes = (IsAdminOrReadPermission, )
-    filter_backends = (SearchFilter, )
-    search_fields = ('name', )
-
-
-class GenreDestroyAPIView(generics.DestroyAPIView):
-    """delete для объекта модели Genre."""
-
-    queryset = Genre.objects.all()
-    serializer_class = GenreSerializer
-    permission_classes = (IsAdminPermission, )
-    lookup_field = 'slug'
 
 
 class TitleViewSet(NotAllowedPutMixin, viewsets.ModelViewSet):
     """CRUD для модели Title."""
 
-    queryset = Title.objects.prefetch_related('genre', 'category')
-    serializer_class = TitleSerializer
+    queryset = Title.objects.annotate(
+        rating=Avg('reviews__score')).order_by('pk')
     permission_classes = (IsAdminOrReadPermission, )
     filter_backends = (DjangoFilterBackend, )
     filterset_class = TitlesFilter
 
     def get_serializer_class(self):
-        if self.request.method in ['POST', 'PATCH', 'DELETE']:
-            return TitleWriteSerializer
-        return TitleReadSerializer
+        if self.request.method in SAFE_METHODS:
+            return TitleReadSerializer
+        return TitleWriteSerializer
 
 
 class ReviewViewSet(NotAllowedPutMixin, viewsets.ModelViewSet):
@@ -95,6 +83,7 @@ class ReviewViewSet(NotAllowedPutMixin, viewsets.ModelViewSet):
     Переопределяем get_queryset для получения title_id и
     perform_create для сохранения автора и произведения.
     """
+
     serializer_class = ReviewSerializer
     permission_classes = (IsAuthorOrModeratorOrAdminPermission, )
 
