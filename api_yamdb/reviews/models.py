@@ -1,4 +1,5 @@
 """Модели приложения reviews."""
+from datetime import datetime
 
 from django.contrib.auth.models import AbstractUser
 from django.core.validators import MinValueValidator, MaxValueValidator
@@ -67,7 +68,10 @@ class User(AbstractUser):
 
 class Title(models.Model):
     name = models.CharField(max_length=256, verbose_name='Название')
-    year = models.IntegerField(verbose_name='Год выпуска')
+    year = models.PositiveSmallIntegerField(
+        validators=[MaxValueValidator(datetime.now().year)],
+        verbose_name='Год выпуска'
+    )
     description = models.TextField(verbose_name='Описание')
     genre = models.ManyToManyField('Genre', through='GenreTitle',
                                    verbose_name='Жанр')
@@ -76,7 +80,7 @@ class Title(models.Model):
                                  verbose_name='Категория')
 
     class Meta:
-        ordering = ['id']
+        ordering = ['year']
         verbose_name = 'Произведение'
         verbose_name_plural = 'Произведения'
 
@@ -84,12 +88,20 @@ class Title(models.Model):
         return self.name[:LENGTH_TO_DISPLAY]
 
 
-class Category(models.Model):
+class CategoryGenreMixin(models.Model):
     name = models.CharField(max_length=256, verbose_name='Название')
-    slug = models.SlugField(max_length=50, unique=True, verbose_name='Слаг')
+    slug = models.SlugField(unique=True, verbose_name='Слаг')
 
     class Meta:
         ordering = ['slug']
+
+    def __str__(self):
+        return self.name[:LENGTH_TO_DISPLAY]
+
+
+class Category(CategoryGenreMixin):
+
+    class Meta:
         verbose_name = 'Категория'
         verbose_name_plural = 'Категории'
 
@@ -97,17 +109,11 @@ class Category(models.Model):
         return self.name[:LENGTH_TO_DISPLAY]
 
 
-class Genre(models.Model):
-    name = models.CharField(max_length=256, verbose_name='Название')
-    slug = models.SlugField(max_length=50, unique=True, verbose_name='Слаг')
+class Genre(CategoryGenreMixin):
 
     class Meta:
-        ordering = ['slug']
         verbose_name = 'Жанр'
         verbose_name_plural = 'Жанры'
-
-    def __str__(self):
-        return self.name[:LENGTH_TO_DISPLAY]
 
 
 class GenreTitle(models.Model):
