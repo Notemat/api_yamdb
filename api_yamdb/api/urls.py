@@ -27,7 +27,9 @@ router.register('categories', CategoryViewSet)
 router.register('genres', GenreViewSet)
 
 urlpatterns = [
-    path('auth/signup/', send_confirmation_code),
-    path('auth/token/', send_token),
+    path('auth/', include([
+        path('signup/', send_confirmation_code),
+        path('token/', send_token)
+    ])),
     path('', include(router.urls)),
 ]
