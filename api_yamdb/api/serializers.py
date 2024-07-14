@@ -59,17 +59,18 @@ class TitleWriteSerializer(serializers.ModelSerializer):
         slug_field='slug',
         queryset=Category.objects.all()
     )
+    year = serializers.IntegerField(required=True)
 
     class Meta:
         model = Title
         fields = ('id', 'name', 'year', 'description', 'genre', 'category')
 
-    def validate(self, data):
-        if 'year' in data and data['year'] > datetime.now().year:
+    def validate_year(self, value):
+        if value > datetime.now().year:
             raise serializers.ValidationError(
                 'Год выпуска не может быть больше текущего.'
             )
-        return data
+        return value
 
     def create(self, validated_data):
         genres = validated_data.pop('genre')
