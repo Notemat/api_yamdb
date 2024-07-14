@@ -12,10 +12,10 @@ from rest_framework.mixins import (CreateModelMixin,
                                    DestroyModelMixin,
                                    ListModelMixin)
 from rest_framework.pagination import PageNumberPagination
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated, SAFE_METHODS
 from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import RefreshToken, AccessToken
-from rest_framework import generics, viewsets, status
+from rest_framework import viewsets, status
 
 from api.filters import TitlesFilter
 from reviews.models import Category, Genre, Review, Title, User
@@ -73,9 +73,9 @@ class TitleViewSet(NotAllowedPutMixin, viewsets.ModelViewSet):
     filterset_class = TitlesFilter
 
     def get_serializer_class(self):
-        if self.request.method in ['POST', 'PATCH', 'DELETE']:
-            return TitleWriteSerializer
-        return TitleReadSerializer
+        if self.request.method in SAFE_METHODS:
+            return TitleReadSerializer
+        return TitleWriteSerializer
 
 
 class ReviewViewSet(NotAllowedPutMixin, viewsets.ModelViewSet):
@@ -84,6 +84,7 @@ class ReviewViewSet(NotAllowedPutMixin, viewsets.ModelViewSet):
     Переопределяем get_queryset для получения title_id и
     perform_create для сохранения автора и произведения.
     """
+
     serializer_class = ReviewSerializer
     permission_classes = (IsAuthorOrModeratorOrAdminPermission, )
 
