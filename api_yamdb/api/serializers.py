@@ -200,15 +200,3 @@ class RegisterDataSerializer(serializers.ModelSerializer):
     class Meta:
         fields = ('username', 'email')
         model = User
-
-
-class TitleSerializer(serializers.ModelSerializer):
-    """Сериализатор для произведений."""
-    rating = serializers.IntegerField(read_only=True)
-    genre = GenreSerializer(many=True, source='genre')
-    category = CategorySerializer()
-
-    class Meta:
-        model = Title
-        fields = ('id', 'name', 'year', 'rating', 'description', 'genre',
-                  'category')
