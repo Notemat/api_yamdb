@@ -5,23 +5,23 @@ from api.views import (CategoryViewSet, CommentViewSet, GenreViewSet,
                        ReviewViewSet, TitleViewSet, UserViewSet,
                        send_confirmation_code, send_token)
 
-router = DefaultRouter()
-router.register(
+v1_router = DefaultRouter()
+v1_router.register(
     r'titles/(?P<title_id>\d+)/reviews', ReviewViewSet, basename='reviews'
 )
-router.register(
+v1_router.register(
     r'titles/(?P<title_id>\d+)/reviews/(?P<review_id>\d+)/comments',
     CommentViewSet, basename='comments'
 )
-router.register('titles', TitleViewSet)
-router.register('users', UserViewSet)
-router.register('categories', CategoryViewSet)
-router.register('genres', GenreViewSet)
+v1_router.register('titles', TitleViewSet)
+v1_router.register('users', UserViewSet)
+v1_router.register('categories', CategoryViewSet)
+v1_router.register('genres', GenreViewSet)
 
 urlpatterns = [
     path('auth/', include([
         path('signup/', send_confirmation_code),
         path('token/', send_token)
     ])),
-    path('', include(router.urls)),
+    path('', include(v1_router.urls)),
 ]

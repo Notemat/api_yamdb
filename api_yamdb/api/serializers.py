@@ -2,6 +2,8 @@ import re
 from datetime import datetime
 
 from django.core.exceptions import ValidationError
+from django.core.validators import RegexValidator, EmailValidator
+from rest_framework.validators import UniqueValidator
 from rest_framework import serializers
 
 from reviews.constants import (EMAIL_MAX_LENGTH, MAX_SCORE_VALUE,
@@ -145,7 +147,7 @@ class UserSerializer(serializers.ModelSerializer):
         if value == 'me':
             raise ValidationError('Имя пользователя "me" запрещено.')
         if User.objects.filter(username=value).exists():
-            raise ValidationError('Недопустимый никнейм.')
+            raise ValidationError('Данный username уже используется.')
         return value
 
     def validate_email(self, value):
@@ -153,7 +155,7 @@ class UserSerializer(serializers.ModelSerializer):
         if not re.match(r"^[^@]+@[^@]+\.[^@]+$", value):
             raise ValidationError("Неверный формат email.")
         if User.objects.filter(email=value).exists():
-            raise ValidationError('Неверный формат email.')
+            raise ValidationError('Данный email уже используется.')
         return value
 
 
