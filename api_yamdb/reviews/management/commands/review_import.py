@@ -1,12 +1,11 @@
-import csv
 import os
 
 from django.conf import settings
-from django.core.management.base import BaseCommand
+from reviews.management.commands import data_import
 from reviews.models import Review, Title, User
 
 
-class Command(BaseCommand):
+class ReviewCommand(data_import.Command):
     help = 'Import data from CSV file to Review model'
 
     def add_arguments(self, parser):
@@ -16,22 +15,12 @@ class Command(BaseCommand):
                                  'static', 'data', 'review.csv')
         )
 
-    def handle(self, *args, **options):
-        csv_file = options['csv_file']
-
-        with open(csv_file, encoding='utf-8') as file:
-            reader = csv.DictReader(file)
-            objects = [
-                Review(
-                    pk=row['id'],
-                    title=Title.objects.get(pk=row['title_id']),
-                    text=row['text'],
-                    author=User.objects.get(pk=row['author']),
-                    score=row['score'],
-                    pub_date=row['pub_date']
-                )
-                for row in reader
-            ]
-
-        Review.objects.bulk_create(objects)
-        self.stdout.write(self.style.SUCCESS('Data imported successfully'))
+    def import_data(self, row):
+        Review.objects.create(
+            pk=row['id'],
+            title=Title.objects.get(pk=row['title_id']),
+            text=row['text'],
+            author=User.objects.get(pk=row['author']),
+            score=row['score'],
+            pub_date=row['pub_date']
+        )
