@@ -2,15 +2,12 @@
 from datetime import datetime
 
 from django.contrib.auth.models import AbstractUser
-from django.core.validators import MinValueValidator, MaxValueValidator
+from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 
-from reviews.constants import (
-    LENGTH_TO_DISPLAY,
-    MAX_SCORE_VALUE,
-    MIN_SCORE_VALUE,
-
-)
+from reviews.constants import (EMAIL_MAX_LENGTH, FIELD_MAX_LENGTH,
+                               LENGTH_TO_DISPLAY, MAX_SCORE_VALUE,
+                               MIN_SCORE_VALUE, USERNAME_MAX_LENGTH)
 from reviews.mixins import CategoryGenreMixin
 
 
@@ -28,13 +25,13 @@ class User(AbstractUser):
 
     max_role_length = max(len(role[1]) for role in USER_ROLE)
     username = models.CharField(
-        max_length=150,
+        max_length=USERNAME_MAX_LENGTH,
         unique=True,
         null=False
     )
     email = models.EmailField(
         'Электронная почта',
-        max_length=254,
+        max_length=EMAIL_MAX_LENGTH,
         unique=True,
     )
     bio = models.TextField('О себе', blank=True)
@@ -64,7 +61,10 @@ class User(AbstractUser):
 
 
 class Title(models.Model):
-    name = models.CharField(max_length=256, verbose_name='Название')
+    name = models.CharField(
+        max_length=FIELD_MAX_LENGTH,
+        verbose_name='Название'
+    )
     year = models.PositiveSmallIntegerField(
         validators=[MaxValueValidator(datetime.now().year)],
         verbose_name='Год выпуска'

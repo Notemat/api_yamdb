@@ -3,44 +3,28 @@ from django.contrib.auth.tokens import default_token_generator
 from django.core.mail import send_mail
 from django.db.models import Avg
 from django.shortcuts import get_object_or_404
-
 from django_filters.rest_framework import DjangoFilterBackend
+from rest_framework import status, viewsets
 from rest_framework.decorators import action, api_view
-from rest_framework.exceptions import ValidationError
 from rest_framework.filters import SearchFilter
-from rest_framework.mixins import (CreateModelMixin,
-                                   DestroyModelMixin,
+from rest_framework.mixins import (CreateModelMixin, DestroyModelMixin,
                                    ListModelMixin)
 from rest_framework.pagination import PageNumberPagination
-from rest_framework.permissions import (
-    IsAuthenticated,
-    IsAuthenticatedOrReadOnly,
-    SAFE_METHODS,
-)
+from rest_framework.permissions import (SAFE_METHODS, IsAuthenticated,
+                                        IsAuthenticatedOrReadOnly)
 from rest_framework.response import Response
-from rest_framework_simplejwt.tokens import RefreshToken, AccessToken
-from rest_framework import viewsets, status
+from rest_framework_simplejwt.tokens import AccessToken, RefreshToken
 
-from api.filters import TitlesFilter
 from reviews.models import Category, Genre, Review, Title, User
-from api.serializers import (
-    CategorySerializer,
-    CommentSerializer,
-    GenreSerializer,
-    ReviewSerializer,
-    TitleReadSerializer,
-    TitleWriteSerializer,
-    InitialRegisterDataSerializer,
-    TokenSerializer,
-    UserSerializer,
-    RegisterDataSerializer
-)
+from api.filters import TitlesFilter
 from api.mixins import NotAllowedPutMixin
-from api.permissions import (
-    IsAdminPermission,
-    IsAdminOrReadPermission,
-    IsAuthorOrModeratorOrAdminPermission
-)
+from api.permissions import (IsAdminOrReadPermission, IsAdminPermission,
+                             IsAuthorOrModeratorOrAdminPermission)
+from api.serializers import (CategorySerializer, CommentSerializer,
+                             GenreSerializer, InitialRegisterDataSerializer,
+                             RegisterDataSerializer, ReviewSerializer,
+                             TitleReadSerializer, TitleWriteSerializer,
+                             TokenSerializer, UserSerializer)
 
 
 class CategoryGenreCommon(CreateModelMixin, DestroyModelMixin,

@@ -1,7 +1,7 @@
-from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 from django.contrib import admin
+from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 
-from reviews.forms import TitleForm, UserChangeForm, MyUserCreationForm
+from reviews.forms import MyUserCreationForm, TitleForm, UserChangeForm
 from reviews.models import Category, Comment, Genre, Review, Title, User
 
 

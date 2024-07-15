@@ -2,23 +2,12 @@ import re
 from datetime import datetime
 
 from django.core.exceptions import ValidationError
-from django.core.validators import EmailValidator, RegexValidator
-
 from rest_framework import serializers
 
-from reviews.constants import (
-    MAX_SCORE_VALUE,
-    MIN_SCORE_VALUE,
-)
-from reviews.models import (
-    Category,
-    Comment,
-    Genre,
-    GenreTitle,
-    Review,
-    Title,
-    User
-)
+from reviews.constants import (MAX_SCORE_VALUE, MIN_SCORE_VALUE,
+                               USERNAME_MAX_LENGTH)
+from reviews.models import (Category, Comment, Genre, GenreTitle, Review,
+                            Title, User)
 
 
 class CategorySerializer(serializers.ModelSerializer):
@@ -164,7 +153,10 @@ class UserSerializer(serializers.ModelSerializer):
 class TokenSerializer(serializers.Serializer):
     """Сериализатор для токена."""
 
-    username = serializers.SlugField(max_length=150, required=True)
+    username = serializers.SlugField(
+        max_length=USERNAME_MAX_LENGTH,
+        required=True
+    )
     confirmation_code = serializers.CharField()
 
 

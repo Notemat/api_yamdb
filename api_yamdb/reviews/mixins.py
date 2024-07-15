@@ -1,10 +1,12 @@
 from django.db import models
 
-from reviews.constants import LENGTH_TO_DISPLAY
+from reviews.constants import FIELD_MAX_LENGTH, LENGTH_TO_DISPLAY
 
 
 class CategoryGenreMixin(models.Model):
-    name = models.CharField(max_length=256, verbose_name='Название')
+    name = models.CharField(
+        max_length=FIELD_MAX_LENGTH, verbose_name='Название'
+    )
     slug = models.SlugField(unique=True, verbose_name='Слаг')
 
     class Meta:
