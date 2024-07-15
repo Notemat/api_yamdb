@@ -4,9 +4,9 @@ from datetime import datetime
 from django.core.exceptions import ValidationError
 from rest_framework import serializers
 
-from reviews.constants import (MAX_SCORE_VALUE, MIN_SCORE_VALUE,
-                               USERNAME_MAX_LENGTH)
-from reviews.models import (Category, Comment, Genre, GenreTitle, Review,
+from reviews.constants import (EMAIL_MAX_LENGTH, MAX_SCORE_VALUE,
+                               MIN_SCORE_VALUE, USERNAME_MAX_LENGTH)
+from reviews.models import (Category, Comment, Genre, Review,
                             Title, User)
 
 
@@ -122,6 +122,9 @@ class CommentSerializer(serializers.ModelSerializer):
 class UserSerializer(serializers.ModelSerializer):
     """Сериализатор для пользователей."""
 
+    username = serializers.CharField(max_length=USERNAME_MAX_LENGTH)
+    email = serializers.EmailField(max_length=EMAIL_MAX_LENGTH)
+
     class Meta:
         """Мета класс пользователя."""
 
@@ -141,12 +144,16 @@ class UserSerializer(serializers.ModelSerializer):
             raise ValidationError('Недопустимый никнейм.')
         if value == 'me':
             raise ValidationError('Имя пользователя "me" запрещено.')
+        if User.objects.filter(username=value).exists():
+            raise ValidationError('Недопустимый никнейм.')
         return value
 
     def validate_email(self, value):
         """Проверка валидности email."""
         if not re.match(r"^[^@]+@[^@]+\.[^@]+$", value):
             raise ValidationError("Неверный формат email.")
+        if User.objects.filter(email=value).exists():
+            raise ValidationError('Неверный формат email.')
         return value
 
 
