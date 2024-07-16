@@ -54,7 +54,7 @@ class TitleViewSet(NotAllowedPutMixin, viewsets.ModelViewSet):
     """CRUD для модели Title."""
 
     queryset = Title.objects.annotate(
-        rating=Avg('reviews__score')).order_by('pk')
+        rating=Avg('reviews__score'))
     permission_classes = (IsAdminOrReadPermission, )
     filter_backends = (DjangoFilterBackend, OrderingFilter)
     filterset_class = TitlesFilter
