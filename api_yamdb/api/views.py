@@ -6,7 +6,7 @@ from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import status, viewsets
 from rest_framework.decorators import action, api_view
-from rest_framework.filters import SearchFilter
+from rest_framework.filters import OrderingFilter, SearchFilter
 from rest_framework.mixins import (CreateModelMixin, DestroyModelMixin,
                                    ListModelMixin)
 from rest_framework.pagination import PageNumberPagination
@@ -56,8 +56,10 @@ class TitleViewSet(NotAllowedPutMixin, viewsets.ModelViewSet):
     queryset = Title.objects.annotate(
         rating=Avg('reviews__score')).order_by('pk')
     permission_classes = (IsAdminOrReadPermission, )
-    filter_backends = (DjangoFilterBackend, )
+    filter_backends = (DjangoFilterBackend, OrderingFilter)
     filterset_class = TitlesFilter
+    ordering_fields = ('pk', 'year')
+    ordering = ('pk')
 
     def get_queryset(self):
         return super().get_queryset()
