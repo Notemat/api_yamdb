@@ -124,9 +124,6 @@ class CommentSerializer(serializers.ModelSerializer):
 class UserSerializer(serializers.ModelSerializer):
     """Сериализатор для пользователей."""
 
-    username = serializers.CharField(max_length=USERNAME_MAX_LENGTH)
-    email = serializers.EmailField(max_length=EMAIL_MAX_LENGTH)
-
     class Meta:
         """Мета класс пользователя."""
 
@@ -141,34 +138,12 @@ class UserSerializer(serializers.ModelSerializer):
         model = User
 
     def validate_username(self, value):
-        """Валидация имени пользователя."""
+        """Валидация username."""
         if not re.match(r'^[\w.@+-]+\Z', value):
-            raise ValidationError('Недопустимый никнейм.')
+            raise ValidationError(('Недопустимый никнейм.'))
         if value == 'me':
-            raise ValidationError('Имя пользователя "me" запрещено.')
-        if User.objects.filter(username=value).exists():
-            raise ValidationError('Данный username уже используется.')
-        if len(value) > USERNAME_MAX_LENGTH:
-            raise ValidationError('Имя пользователя не должно превышать 150 символов.')
+            raise ValidationError(('Имя пользователя "me" запрещено.'))
         return value
-
-    def validate_email(self, value):
-        """Проверка валидности email."""
-        if not re.match(r"^[^@]+@[^@]+\.[^@]+$", value):
-            raise ValidationError("Неверный формат email.")
-        if User.objects.filter(email=value).exists():
-            raise ValidationError('Данный email уже используется.')
-        if len(value) > EMAIL_MAX_LENGTH:
-            raise ValidationError('Электронная почта не должна превышать 254 символа.')
-        return value
-
-    def validate(self, data):
-        """Валидация уникальности username и email."""
-        username = data.get('username')
-        email = data.get('email')
-        if User.objects.filter(username=username, email=email).exists():
-            raise ValidationError('Пользователь с такими данными уже существует.')
-        return data
 
 
 class TokenSerializer(serializers.Serializer):
@@ -181,29 +156,33 @@ class TokenSerializer(serializers.Serializer):
     confirmation_code = serializers.CharField()
 
 
-class InitialRegisterDataSerializer(serializers.Serializer):
+class InitialRegisterDataSerializer(serializers.ModelSerializer):
     """Сериализатор входящих данных пользователя."""
 
-    username = serializers.CharField(max_length=USERNAME_MAX_LENGTH)
-    email = serializers.EmailField(max_length=EMAIL_MAX_LENGTH)
-
     class Meta:
-        fields = ('username', 'email')
         model = User
+        fields = ('username', 'email')
 
     def validate_username(self, value):
+        """Валидация уникальности username."""
         if not re.match(r'^[\w.@+-]+\Z', value):
-            raise ValidationError('Недопустимый никнейм.')
+            raise ValidationError(('Недопустимый никнейм.'))
         if value == 'me':
-            raise serializers.ValidationError(
-                'Нельзя использовать \'me\' в качестве логина')
+            raise ValidationError(('Имя пользователя "me" запрещено.'))
+        if User.objects.filter(username=value).exists():
+            raise ValidationError(('Данный username уже используется.'))
+        return value
+
+    def validate_email(self, value):
+        """Валидация уникальности email."""
+        if User.objects.filter(email=value).exists():
+            raise ValidationError(('Данный email уже используется.'))
         return value
 
     def create(self, validated_data):
+        """Создание пользователя."""
         user, created = User.objects.get_or_create(
             username=validated_data['username'],
             email=validated_data['email'],
         )
-        if created:
-            user.save()
-        return user
+        return user or created

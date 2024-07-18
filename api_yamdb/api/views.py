@@ -137,7 +137,7 @@ def send_confirmation_code(request):
         f'{settings.ADMIN_EMAIL}',
         [f'{user.email}'],
         fail_silently=False,
-    )
+        )
     return Response(serializer.data, status=status.HTTP_200_OK)
 
 
