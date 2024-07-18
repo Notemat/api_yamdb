@@ -145,29 +145,7 @@ class UserSerializer(serializers.ModelSerializer):
             raise ValidationError('Недопустимый никнейм.')
         if value == 'me':
             raise ValidationError('Имя пользователя "me" запрещено.')
-        if User.objects.filter(username=value).exists():
-            raise ValidationError('Данный username уже используется.')
-        if len(value) > USERNAME_MAX_LENGTH:
-            raise ValidationError('Имя пользователя не должно превышать 150 символов.')
         return value
-
-    def validate_email(self, value):
-        """Проверка валидности email."""
-        if not re.match(r"^[^@]+@[^@]+\.[^@]+$", value):
-            raise ValidationError("Неверный формат email.")
-        if User.objects.filter(email=value).exists():
-            raise ValidationError('Данный email уже используется.')
-        if len(value) > EMAIL_MAX_LENGTH:
-            raise ValidationError('Электронная почта не должна превышать 254 символа.')
-        return value
-
-    def validate(self, data):
-        """Валидация уникальности username и email."""
-        username = data.get('username')
-        email = data.get('email')
-        if User.objects.filter(username=username, email=email).exists():
-            raise ValidationError('Пользователь с такими данными уже существует.')
-        return data
 
 
 class TokenSerializer(serializers.Serializer):
