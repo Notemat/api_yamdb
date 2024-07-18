@@ -148,7 +148,7 @@ class UserSerializer(serializers.ModelSerializer):
             raise ValidationError('Имя пользователя "me" запрещено.')
         if User.objects.filter(username=value).exists():
             raise ValidationError('Данный username уже используется.')
-        if len(value) > 150:
+        if len(value) > USERNAME_MAX_LENGTH:
             raise ValidationError('Имя пользователя не должно превышать 150 символов.')
         return value
 
