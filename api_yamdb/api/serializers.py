@@ -148,6 +148,8 @@ class UserSerializer(serializers.ModelSerializer):
             raise ValidationError('Имя пользователя "me" запрещено.')
         if User.objects.filter(username=value).exists():
             raise ValidationError('Данный username уже используется.')
+        if len(value) > 150:
+            raise ValidationError('Имя пользователя не должно превышать 150 символов.')
         return value
 
     def validate_email(self, value):
@@ -156,7 +158,17 @@ class UserSerializer(serializers.ModelSerializer):
             raise ValidationError("Неверный формат email.")
         if User.objects.filter(email=value).exists():
             raise ValidationError('Данный email уже используется.')
+        if len(value) > EMAIL_MAX_LENGTH:
+            raise ValidationError('Электронная почта не должна превышать 254 символа.')
         return value
+
+    def validate(self, data):
+        """Валидация уникальности username и email."""
+        username = data.get('username')
+        email = data.get('email')
+        if User.objects.filter(username=username, email=email).exists():
+            raise ValidationError('Пользователь с такими данными уже существует.')
+        return data
 
 
 class TokenSerializer(serializers.Serializer):
@@ -172,12 +184,8 @@ class TokenSerializer(serializers.Serializer):
 class InitialRegisterDataSerializer(serializers.Serializer):
     """Сериализатор входящих данных пользователя."""
 
-    username = serializers.CharField()
-    email = serializers.EmailField()
-
-
-class RegisterDataSerializer(serializers.ModelSerializer):
-    """Сериализатор для данных регистрации."""
+    username = serializers.CharField(max_length=USERNAME_MAX_LENGTH)
+    email = serializers.EmailField(max_length=EMAIL_MAX_LENGTH)
 
     class Meta:
         fields = ('username', 'email')
@@ -190,3 +198,12 @@ class RegisterDataSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError(
                 'Нельзя использовать \'me\' в качестве логина')
         return value
+
+    def create(self, validated_data):
+        user, created = User.objects.get_or_create(
+            username=validated_data['username'],
+            email=validated_data['email'],
+        )
+        if created:
+            user.save()
+        return user
