@@ -49,7 +49,7 @@ class User(AbstractUser):
     @property
     def is_admin(self):
         """Проверка на админа."""
-        return self.role == self.ADMIN or self.is_superuser
+        return self.role == self.ADMIN
 
     @property
     def is_moderator(self):

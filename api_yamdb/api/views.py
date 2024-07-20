@@ -22,7 +22,7 @@ from api.permissions import (IsAdminOrReadPermission, IsAdminPermission,
                              IsAuthorOrModeratorOrAdminPermission)
 from api.serializers import (CategorySerializer, CommentSerializer,
                              GenreSerializer, InitialRegisterDataSerializer,
-                             ReviewSerializer,
+                             RegisterDataSerializer, ReviewSerializer,
                              TitleReadSerializer, TitleWriteSerializer,
                              TokenSerializer, UserSerializer)
 
@@ -129,16 +129,37 @@ def send_confirmation_code(request):
     """Функция для получения кода."""
     serializer = InitialRegisterDataSerializer(data=request.data)
     serializer.is_valid(raise_exception=True)
-    user = serializer.save()
+    username = serializer.validated_data['username']
+    email = serializer.validated_data['email']
+    if User.objects.filter(username=username, email=email).exists():
+        user = User.objects.get(username=username, email=email)
+        confirmation_code = default_token_generator.make_token(user)
+        send_mail(
+            'Код подтверждения',
+            f'{confirmation_code}',
+            f'{settings.ADMIN_EMAIL}',
+            [f'{email}'],
+            fail_silently=False,
+        )
+        return Response(serializer.data, status=status.HTTP_200_OK)
+    serializer = RegisterDataSerializer(data=request.data)
+    serializer.is_valid(raise_exception=True)
+    serializer.save()
+    username = serializer.validated_data['username']
+    email = serializer.validated_data['email']
+    user = get_object_or_404(User, username=username, email=email)
     confirmation_code = default_token_generator.make_token(user)
     send_mail(
         'Код подтверждения',
         f'{confirmation_code}',
         f'{settings.ADMIN_EMAIL}',
-        [f'{user.email}'],
+        [f'{email}'],
         fail_silently=False,
     )
-    return Response(serializer.data, status=status.HTTP_200_OK)
+    return Response(
+        serializer.data,
+        status=status.HTTP_200_OK
+    )
 
 
 @api_view(['POST'])
