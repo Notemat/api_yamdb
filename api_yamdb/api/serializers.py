@@ -1,14 +1,12 @@
-import re
 from datetime import datetime
 
 from django.core.exceptions import ValidationError
 from rest_framework import serializers
-
 from reviews.constants import (EMAIL_MAX_LENGTH, MAX_SCORE_VALUE,
                                MIN_SCORE_VALUE, USERNAME_MAX_LENGTH)
-from reviews.models import (Category, Comment, Genre, Review,
-                            Title, User)
-from api.mixins import ValidateUsernameMixin
+
+from reviews.models import Category, Comment, Genre, Review, Title, User
+from api.mixins import ValidateEmailMixin, ValidateUsernameMixin
 
 
 class CategorySerializer(serializers.ModelSerializer):
@@ -120,9 +118,12 @@ class CommentSerializer(serializers.ModelSerializer):
         fields = ('id', 'text', 'author', 'pub_date')
 
 
-class UserSerializer(ValidateUsernameMixin, serializers.ModelSerializer):
+class UserSerializer(
+    ValidateEmailMixin, ValidateUsernameMixin, serializers.ModelSerializer
+):
     """Сериализатор для пользователей."""
 
+    username = serializers.CharField(max_length=USERNAME_MAX_LENGTH)
     email = serializers.EmailField(max_length=EMAIL_MAX_LENGTH)
 
     class Meta:
@@ -138,13 +139,17 @@ class UserSerializer(ValidateUsernameMixin, serializers.ModelSerializer):
         )
         model = User
 
+    def validate_username(self, value):
+        """Валидация имени пользователя."""
+        if User.objects.filter(username=value).exists():
+            raise ValidationError('Данный username уже используется.')
+        return super().validate_username(value)
+
     def validate_email(self, value):
         """Проверка валидности email."""
-        if not re.match(r"^[^@]+@[^@]+\.[^@]+$", value):
-            raise ValidationError("Неверный формат email.")
         if User.objects.filter(email=value).exists():
             raise ValidationError('Данный email уже используется.')
-        return value
+        return super().validate_email(value)
 
 
 class TokenSerializer(serializers.Serializer):
@@ -157,29 +162,17 @@ class TokenSerializer(serializers.Serializer):
     confirmation_code = serializers.CharField()
 
 
-class RegisterDataSerializer(serializers.ModelSerializer):
+class RegisterDataSerializer(
+    ValidateEmailMixin, ValidateUsernameMixin, serializers.ModelSerializer
+):
     """Сериализатор для данных регистрации."""
-    
-    username = serializers.CharField(max_length=USERNAME_MAX_LENGTH)
+
     email = serializers.EmailField(max_length=EMAIL_MAX_LENGTH)
+    username = serializers.CharField(max_length=USERNAME_MAX_LENGTH)
 
     class Meta:
         model = User
         fields = ('username', 'email')
-
-    def validate_username(self, value):
-        """Валидация имени пользователя."""
-        if not re.match(r'^[\w.@+-]+\Z', value):
-            raise serializers.ValidationError('Недопустимый никнейм.')
-        if value == 'me':
-            raise serializers.ValidationError('Имя пользователя "me" запрещено.')
-        return value
-
-    def validate_email(self, value):
-        """Проверка валидности email."""
-        if not re.match(r"^[^@]+@[^@]+\.[^@]+$", value):
-            raise ValidationError("Неверный формат email.")
-        return value
 
     def validate(self, data):
         """Проверка уникальности email и username."""
@@ -189,7 +182,7 @@ class RegisterDataSerializer(serializers.ModelSerializer):
         if User.objects.filter(email=email).exists():
             if not User.objects.filter(username=username).exists():
                 raise serializers.ValidationError(
-                    'Этот email уже используется другим username.'
+                    'Этот email уже используется под другим username.'
                     )
 
         return data
@@ -201,5 +194,7 @@ class RegisterDataSerializer(serializers.ModelSerializer):
             defaults={'email': validated_data['email']}
         )
         if not created and user.email != validated_data['email']:
-            raise serializers.ValidationError('Имя пользователя используется другим email.')
+            raise serializers.ValidationError(
+                'Имя пользователя используется под другим email.'
+            )
         return user

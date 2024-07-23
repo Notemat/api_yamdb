@@ -20,13 +20,11 @@ from api.filters import TitlesFilter
 from api.mixins import NotAllowedPutMixin
 from api.permissions import (IsAdminOrReadPermission, IsAdminPermission,
                              IsAuthorOrModeratorOrAdminPermission)
-from api.serializers import (CategorySerializer,
-                             RegisterDataSerializer,
-                             CommentSerializer,
-                             GenreSerializer,
-                             ReviewSerializer,
-                             TitleReadSerializer, TitleWriteSerializer,
-                             TokenSerializer, UserSerializer)
+from api.serializers import (CategorySerializer, CommentSerializer,
+                             GenreSerializer, RegisterDataSerializer,
+                             ReviewSerializer, TitleReadSerializer,
+                             TitleWriteSerializer, TokenSerializer,
+                             UserSerializer)
 
 
 class CategoryGenreCommon(CreateModelMixin, DestroyModelMixin,
@@ -126,21 +124,9 @@ class CommentViewSet(NotAllowedPutMixin, viewsets.ModelViewSet):
         )
 
 
-# def send_confirmation_email(user, email):
-#     """Отправка письма с кодом подтверждения."""
-#     confirmation_code = default_token_generator.make_token(user)
-#     send_mail(
-#         'Код подтверждения',
-#         confirmation_code,
-#         settings.ADMIN_EMAIL,
-#         [email],
-#         fail_silently=False,
-#     )
-
-
 @api_view(['POST'])
 def send_confirmation_code(request):
-    """Функция для получения кода."""
+    """Функция для получения и отправки кода."""
     serializer = RegisterDataSerializer(data=request.data)
     serializer.is_valid(raise_exception=True)
     user = serializer.save()
@@ -160,6 +146,7 @@ def send_confirmation_code(request):
         user_serializer.data,
         status=status.HTTP_200_OK
     )
+
 
 @api_view(['POST'])
 def send_token(request):
