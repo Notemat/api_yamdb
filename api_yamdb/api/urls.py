@@ -1,37 +1,27 @@
 from django.urls import include, path
-
 from rest_framework.routers import DefaultRouter
 
-from api.views import (
-    CategoryListCreateAPIView,
-    CategoryDestroyAPIView,
-    CommentViewSet,
-    GenreListCreateAPIView,
-    GenreDestroyAPIView,
-    ReviewViewSet,
-    send_confirmation_code,
-    send_token,
-    TitleViewSet,
-    UserViewSet
-)
+from api.views import (CategoryViewSet, CommentViewSet, GenreViewSet,
+                       ReviewViewSet, TitleViewSet, UserViewSet,
+                       send_confirmation_code, send_token)
 
-router = DefaultRouter()
-router.register(
+v1_router = DefaultRouter()
+v1_router.register(
     r'titles/(?P<title_id>\d+)/reviews', ReviewViewSet, basename='reviews'
 )
-router.register(
+v1_router.register(
     r'titles/(?P<title_id>\d+)/reviews/(?P<review_id>\d+)/comments',
     CommentViewSet, basename='comments'
 )
-router.register(r'titles', TitleViewSet)
-router.register(r'users', UserViewSet)
+v1_router.register('titles', TitleViewSet)
+v1_router.register('users', UserViewSet)
+v1_router.register('categories', CategoryViewSet)
+v1_router.register('genres', GenreViewSet)
 
 urlpatterns = [
-    path('categories/', CategoryListCreateAPIView.as_view()),
-    path('categories/<slug:slug>/', CategoryDestroyAPIView.as_view()),
-    path('genres/', GenreListCreateAPIView.as_view()),
-    path('genres/<slug:slug>/', GenreDestroyAPIView.as_view()),
-    path('auth/signup/', send_confirmation_code),
-    path('auth/token/', send_token),
-    path('', include(router.urls)),
+    path('auth/', include([
+        path('signup/', send_confirmation_code),
+        path('token/', send_token)
+    ])),
+    path('', include(v1_router.urls)),
 ]

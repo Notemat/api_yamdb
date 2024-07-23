@@ -1,92 +1,73 @@
 from django.conf import settings
 from django.contrib.auth.tokens import default_token_generator
 from django.core.mail import send_mail
+from django.db.models import Avg
 from django.shortcuts import get_object_or_404
-
 from django_filters.rest_framework import DjangoFilterBackend
+from rest_framework import status, viewsets
 from rest_framework.decorators import action, api_view
-from rest_framework.exceptions import ValidationError
-from rest_framework.filters import SearchFilter
+from rest_framework.filters import OrderingFilter, SearchFilter
+from rest_framework.mixins import (CreateModelMixin, DestroyModelMixin,
+                                   ListModelMixin)
 from rest_framework.pagination import PageNumberPagination
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import (SAFE_METHODS, IsAuthenticated,
+                                        IsAuthenticatedOrReadOnly)
 from rest_framework.response import Response
-from rest_framework_simplejwt.tokens import RefreshToken, AccessToken
-from rest_framework import generics, viewsets, status
+from rest_framework_simplejwt.tokens import AccessToken, RefreshToken
 
-from api.filters import TitlesFilter
 from reviews.models import Category, Genre, Review, Title, User
-from api.serializers import (
-    CategorySerializer,
-    CommentSerializer,
-    GenreSerializer,
-    ReviewSerializer,
-    TitleReadSerializer,
-    TitleWriteSerializer,
-    InitialRegisterDataSerializer,
-    TokenSerializer,
-    UserSerializer,
-    RegisterDataSerializer,
-    TitleSerializer
-)
+from api.filters import TitlesFilter
 from api.mixins import NotAllowedPutMixin
-from api.permissions import (
-    IsAdminPermission,
-    IsAdminOrReadPermission,
-    IsAuthorOrModeratorOrAdminPermission
-)
+from api.permissions import (IsAdminOrReadPermission, IsAdminPermission,
+                             IsAuthorOrModeratorOrAdminPermission)
+from api.serializers import (CategorySerializer, CommentSerializer,
+                             GenreSerializer, RegisterDataSerializer,
+                             ReviewSerializer, TitleReadSerializer,
+                             TitleWriteSerializer, TokenSerializer,
+                             UserSerializer)
 
 
-class CategoryListCreateAPIView(generics.ListCreateAPIView):
-    """list and create для модели Category."""
+class CategoryGenreCommon(CreateModelMixin, DestroyModelMixin,
+                          ListModelMixin, viewsets.GenericViewSet):
 
-    queryset = Category.objects.all()
-    serializer_class = CategorySerializer
     permission_classes = (IsAdminOrReadPermission, )
     filter_backends = (SearchFilter, )
     search_fields = ('name', )
+    lookup_field = 'slug'
 
 
-class CategoryDestroyAPIView(generics.DestroyAPIView):
-    """delete для объекта модели Category."""
+class CategoryViewSet(CategoryGenreCommon):
+    """list/create/delete для модели Category."""
 
     queryset = Category.objects.all()
     serializer_class = CategorySerializer
-    permission_classes = (IsAdminPermission, )
-    lookup_field = 'slug'
 
 
-class GenreListCreateAPIView(generics.ListCreateAPIView):
-    """list and create для модели Genre."""
+class GenreViewSet(CategoryGenreCommon):
+    """list/create/delete для модели Genre."""
 
     queryset = Genre.objects.all()
     serializer_class = GenreSerializer
-    permission_classes = (IsAdminOrReadPermission, )
-    filter_backends = (SearchFilter, )
-    search_fields = ('name', )
-
-
-class GenreDestroyAPIView(generics.DestroyAPIView):
-    """delete для объекта модели Genre."""
-
-    queryset = Genre.objects.all()
-    serializer_class = GenreSerializer
-    permission_classes = (IsAdminPermission, )
-    lookup_field = 'slug'
 
 
 class TitleViewSet(NotAllowedPutMixin, viewsets.ModelViewSet):
     """CRUD для модели Title."""
 
-    queryset = Title.objects.prefetch_related('genre', 'category')
-    serializer_class = TitleSerializer
+    queryset = Title.objects.annotate(
+        rating=Avg('reviews__score'))
     permission_classes = (IsAdminOrReadPermission, )
-    filter_backends = (DjangoFilterBackend, )
+    filter_backends = (DjangoFilterBackend, OrderingFilter)
     filterset_class = TitlesFilter
+    ordering_fields = ('pk', 'year')
+    ordering = ('pk')
+
+    def get_queryset(self):
+        return super().get_queryset()
 
     def get_serializer_class(self):
-        if self.request.method in ['POST', 'PATCH', 'DELETE']:
-            return TitleWriteSerializer
-        return TitleReadSerializer
+        if self.request.method in SAFE_METHODS:
+            return TitleReadSerializer
+        return TitleWriteSerializer
 
 
 class ReviewViewSet(NotAllowedPutMixin, viewsets.ModelViewSet):
@@ -95,8 +76,12 @@ class ReviewViewSet(NotAllowedPutMixin, viewsets.ModelViewSet):
     Переопределяем get_queryset для получения title_id и
     perform_create для сохранения автора и произведения.
     """
+
     serializer_class = ReviewSerializer
-    permission_classes = (IsAuthorOrModeratorOrAdminPermission, )
+    permission_classes = (
+        IsAuthorOrModeratorOrAdminPermission,
+        IsAuthenticatedOrReadOnly
+    )
 
     def get_title_object(self):
         title_id = self.kwargs.get('title_id')
@@ -119,11 +104,15 @@ class CommentViewSet(NotAllowedPutMixin, viewsets.ModelViewSet):
     """
 
     serializer_class = CommentSerializer
-    permission_classes = (IsAuthorOrModeratorOrAdminPermission, )
+    permission_classes = (
+        IsAuthorOrModeratorOrAdminPermission,
+        IsAuthenticatedOrReadOnly
+    )
 
     def get_review_object(self):
+        title_id = self.kwargs.get('title_id')
         review_id = self.kwargs.get('review_id')
-        return get_object_or_404(Review, pk=review_id)
+        return get_object_or_404(Review, pk=review_id, title_id=title_id)
 
     def get_queryset(self):
         return self.get_review_object().comments.select_related('author')
@@ -137,38 +126,24 @@ class CommentViewSet(NotAllowedPutMixin, viewsets.ModelViewSet):
 
 @api_view(['POST'])
 def send_confirmation_code(request):
-    """Функция для получения кода."""
-    serializer = InitialRegisterDataSerializer(data=request.data)
-    serializer.is_valid(raise_exception=True)
-    username = serializer.validated_data['username']
-    email = serializer.validated_data['email']
-    if User.objects.filter(username=username, email=email).exists():
-        user = User.objects.get(username=username, email=email)
-        confirmation_code = default_token_generator.make_token(user)
-        send_mail(
-            'Код подтверждения',
-            f'{confirmation_code}',
-            f'{settings.ADMIN_EMAIL}',
-            [f'{email}'],
-            fail_silently=False,
-        )
-        return Response(serializer.data, status=status.HTTP_200_OK)
+    """Функция для получения и отправки кода."""
     serializer = RegisterDataSerializer(data=request.data)
     serializer.is_valid(raise_exception=True)
-    serializer.save()
-    username = serializer.validated_data['username']
-    email = serializer.validated_data['email']
-    user = get_object_or_404(User, username=username, email=email)
+    user = serializer.save()
+
     confirmation_code = default_token_generator.make_token(user)
     send_mail(
         'Код подтверждения',
-        f'{confirmation_code}',
-        f'{settings.ADMIN_EMAIL}',
-        [f'{email}'],
+        confirmation_code,
+        settings.ADMIN_EMAIL,
+        [user.email],
         fail_silently=False,
     )
+
+    user_serializer = RegisterDataSerializer(user)
+
     return Response(
-        serializer.data,
+        user_serializer.data,
         status=status.HTTP_200_OK
     )
 
@@ -219,12 +194,10 @@ class UserViewSet(NotAllowedPutMixin, viewsets.ModelViewSet):
         if request.method == 'GET':
             serializer = self.get_serializer(request.user)
             return Response(serializer.data, status=status.HTTP_200_OK)
-        if request.method == 'PATCH':
+        else:
             serializer = self.get_serializer(
                 request.user, data=request.data, partial=True)
             serializer.is_valid(raise_exception=True)
-            if 'role' in request.data:
-                raise ValidationError({'role': 'Изменение роли недопустимо'})
+            serializer.validated_data['role'] = request.user.role
             serializer.save()
             return Response(serializer.data, status=status.HTTP_200_OK)
-        return Response(status=status.HTTP_405_METHOD_NOT_ALLOWED)

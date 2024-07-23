@@ -1,12 +1,14 @@
 """Модели приложения reviews."""
+from datetime import datetime
 
 from django.contrib.auth.models import AbstractUser
-from django.core.validators import MinValueValidator, MaxValueValidator
+from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 
-
-LENGTH_TO_DISPLAY = 25
-"""Длина для отображения текста в админке."""
+from reviews.constants import (EMAIL_MAX_LENGTH, FIELD_MAX_LENGTH,
+                               LENGTH_TO_DISPLAY, MAX_SCORE_VALUE,
+                               MIN_SCORE_VALUE, USERNAME_MAX_LENGTH)
+from reviews.mixins import CategoryGenreMixin
 
 
 class User(AbstractUser):
@@ -16,43 +18,26 @@ class User(AbstractUser):
     ADMIN = 'admin'
     MODERATOR = 'moderator'
     USER_ROLE = [
-        ('user', USER),
-        ('admin', ADMIN),
-        ('moderator', MODERATOR),
+        (USER, 'Пользователь'),
+        (ADMIN, 'Администратор'),
+        (MODERATOR, 'Модератор'),
     ]
 
+    max_role_length = max(len(role[1]) for role in USER_ROLE)
     username = models.CharField(
-        max_length=150,
+        max_length=USERNAME_MAX_LENGTH,
         unique=True,
-        blank=False,
         null=False
     )
     email = models.EmailField(
         'Электронная почта',
-        max_length=254,
+        max_length=EMAIL_MAX_LENGTH,
         unique=True,
     )
-    first_name = models.CharField('Имя', max_length=50, blank=True)
-    last_name = models.CharField('Фамилия', max_length=50, blank=True)
-    bio = models.TextField('О себе', max_length=500, blank=True)
+    bio = models.TextField('О себе', blank=True)
     role = models.CharField(
-        'Роль', max_length=30, choices=USER_ROLE, default='user'
+        'Роль', max_length=max_role_length, choices=USER_ROLE, default='user'
     )
-
-    @property
-    def is_user(self):
-        """Проверка на пользователя."""
-        return self.role == self.USER
-
-    @property
-    def is_admin(self):
-        """Проверка на админа."""
-        return self.role == self.ADMIN
-
-    @property
-    def is_moderator(self):
-        """Проверка на модератора."""
-        return self.role == self.MODERATOR
 
     class Meta:
         """Мета класс пользователя."""
@@ -61,10 +46,29 @@ class User(AbstractUser):
         verbose_name = 'Пользователь'
         verbose_name_plural = 'Пользователи'
 
+    @property
+    def is_admin(self):
+        """Проверка на админа."""
+        return self.role == self.ADMIN or self.is_superuser
+
+    @property
+    def is_moderator(self):
+        """Проверка на модератора."""
+        return self.role == self.MODERATOR
+
+    def __str__(self):
+        return self.username
+
 
 class Title(models.Model):
-    name = models.CharField(max_length=256, verbose_name='Название')
-    year = models.IntegerField(verbose_name='Год выпуска')
+    name = models.CharField(
+        max_length=FIELD_MAX_LENGTH,
+        verbose_name='Название'
+    )
+    year = models.PositiveSmallIntegerField(
+        validators=[MaxValueValidator(datetime.now().year)],
+        verbose_name='Год выпуска'
+    )
     description = models.TextField(verbose_name='Описание')
     genre = models.ManyToManyField('Genre', through='GenreTitle',
                                    verbose_name='Жанр')
@@ -73,7 +77,7 @@ class Title(models.Model):
                                  verbose_name='Категория')
 
     class Meta:
-        ordering = ['id']
+        ordering = ['year']
         verbose_name = 'Произведение'
         verbose_name_plural = 'Произведения'
 
@@ -81,30 +85,20 @@ class Title(models.Model):
         return self.name[:LENGTH_TO_DISPLAY]
 
 
-class Category(models.Model):
-    name = models.CharField(max_length=256, verbose_name='Название')
-    slug = models.SlugField(max_length=50, unique=True, verbose_name='Слаг')
+class Category(CategoryGenreMixin):
 
     class Meta:
         ordering = ['slug']
         verbose_name = 'Категория'
         verbose_name_plural = 'Категории'
 
-    def __str__(self):
-        return self.name[:LENGTH_TO_DISPLAY]
 
-
-class Genre(models.Model):
-    name = models.CharField(max_length=256, verbose_name='Название')
-    slug = models.SlugField(max_length=50, unique=True, verbose_name='Слаг')
+class Genre(CategoryGenreMixin):
 
     class Meta:
         ordering = ['slug']
         verbose_name = 'Жанр'
         verbose_name_plural = 'Жанры'
-
-    def __str__(self):
-        return self.name[:LENGTH_TO_DISPLAY]
 
 
 class GenreTitle(models.Model):
@@ -131,9 +125,13 @@ class Review(models.Model):
         related_name='reviews',
         verbose_name='Автор'
     )
-    score = models.IntegerField(
+    score = models.PositiveSmallIntegerField(
         verbose_name='Оценка',
-        validators=[MinValueValidator(1), MaxValueValidator(10)])
+        validators=[
+            MinValueValidator(MIN_SCORE_VALUE),
+            MaxValueValidator(MAX_SCORE_VALUE)
+        ]
+    )
     pub_date = models.DateTimeField(
         auto_now_add=True, verbose_name='Дата публикации'
     )

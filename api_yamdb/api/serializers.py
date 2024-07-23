@@ -1,19 +1,12 @@
 from datetime import datetime
-from django.db.models import Avg
+
 from django.core.exceptions import ValidationError
-from django.core.validators import EmailValidator, RegexValidator
-import re
-
 from rest_framework import serializers
+from reviews.constants import (EMAIL_MAX_LENGTH, MAX_SCORE_VALUE,
+                               MIN_SCORE_VALUE, USERNAME_MAX_LENGTH)
 
-from reviews.models import (Category,
-                            Comment,
-                            Genre,
-                            GenreTitle,
-                            Review,
-                            Title,
-                            User
-                            )
+from reviews.models import Category, Comment, Genre, Review, Title, User
+from api.mixins import ValidateEmailMixin, ValidateUsernameMixin
 
 
 class CategorySerializer(serializers.ModelSerializer):
@@ -37,16 +30,12 @@ class TitleReadSerializer(serializers.ModelSerializer):
 
     genre = GenreSerializer(many=True, read_only=True)
     category = CategorySerializer(read_only=True)
-    rating = serializers.SerializerMethodField()
+    rating = serializers.IntegerField()
 
     class Meta:
         model = Title
         fields = ('id', 'name', 'year', 'rating',
                   'description', 'genre', 'category')
-
-    def get_rating(self, obj):
-        rating = obj.reviews.aggregate(Avg('score'))['score__avg']
-        return int(rating) if rating else None
 
 
 class TitleWriteSerializer(serializers.ModelSerializer):
@@ -55,32 +44,32 @@ class TitleWriteSerializer(serializers.ModelSerializer):
     genre = serializers.SlugRelatedField(
         many=True,
         slug_field='slug',
-        queryset=Genre.objects.all()
+        queryset=Genre.objects.all(),
+        required=True,
+        allow_empty=False
     )
     category = serializers.SlugRelatedField(
         slug_field='slug',
         queryset=Category.objects.all()
     )
+    year = serializers.IntegerField(required=True)
 
     class Meta:
         model = Title
         fields = ('id', 'name', 'year', 'description', 'genre', 'category')
 
-    def validate(self, data):
-        if 'year' in data and data['year'] > datetime.now().year:
+    def validate_year(self, value):
+        if value > datetime.now().year:
             raise serializers.ValidationError(
                 'Год выпуска не может быть больше текущего.'
             )
-        return data
+        return value
 
-    def create(self, validated_data):
-        genres = validated_data.pop('genre')
-        title = Title.objects.create(**validated_data)
-        for genre in genres:
-            GenreTitle.objects.create(
-                title=title, genre=genre
-            )
-        return title
+    def to_representation(self, instance):
+        """Метод для возвращения данных, как при GET запросе."""
+        instance.rating = getattr(instance, 'rating', 0)
+        serializer = TitleReadSerializer(instance)
+        return serializer.data
 
 
 class ReviewSerializer(serializers.ModelSerializer):
@@ -93,13 +82,13 @@ class ReviewSerializer(serializers.ModelSerializer):
     class Meta:
         model = Review
         fields = ('id', 'text', 'author', 'score', 'pub_date')
-        read_only_fields = ('id', 'author', 'pub_date')
 
     def validate_score(self, value):
         """Проверка, что оценка находится в диапазоне от 1 до 10."""
-        if not 1 <= value <= 10:
+        if not MIN_SCORE_VALUE <= value <= MAX_SCORE_VALUE:
             raise serializers.ValidationError(
-                "Оценка должна быть в диапазоне от 1 до 10."
+                f'Оценка должна быть в диапазоне от '
+                f'{MIN_SCORE_VALUE} до {MAX_SCORE_VALUE}.'
             )
         return value
 
@@ -127,11 +116,15 @@ class CommentSerializer(serializers.ModelSerializer):
     class Meta:
         model = Comment
         fields = ('id', 'text', 'author', 'pub_date')
-        read_only_fields = ('id', 'author', 'pub_date')
 
 
-class UserSerializer(serializers.ModelSerializer):
+class UserSerializer(
+    ValidateEmailMixin, ValidateUsernameMixin, serializers.ModelSerializer
+):
     """Сериализатор для пользователей."""
+
+    username = serializers.CharField(max_length=USERNAME_MAX_LENGTH)
+    email = serializers.EmailField(max_length=EMAIL_MAX_LENGTH)
 
     class Meta:
         """Мета класс пользователя."""
@@ -145,71 +138,63 @@ class UserSerializer(serializers.ModelSerializer):
             'username'
         )
         model = User
-        validators = [
-            EmailValidator,
-            RegexValidator(
-                regex=r'^[\w.@+-]',
-                message='Недопустимый никнейм',
-            )
-        ]
 
     def validate_username(self, value):
         """Валидация имени пользователя."""
-        if not re.match(r'^[\w.@+-]+\Z', value):
-            raise ValidationError('Недопустимый никнейм.')
-        if value.lower() == 'me':
-            raise ValidationError('Имя пользователя "me" запрещено.')
-        return value
+        if User.objects.filter(username=value).exists():
+            raise ValidationError('Данный username уже используется.')
+        return super().validate_username(value)
 
     def validate_email(self, value):
         """Проверка валидности email."""
-        if not re.match(r"^[^@]+@[^@]+\.[^@]+$", value):
-            raise ValidationError("Неверный формат email.")
-        return value
+        if User.objects.filter(email=value).exists():
+            raise ValidationError('Данный email уже используется.')
+        return super().validate_email(value)
 
 
 class TokenSerializer(serializers.Serializer):
     """Сериализатор для токена."""
 
-    username = serializers.SlugField(max_length=150, required=True)
-
-    class Meta:
-        """Мета класс токена."""
-
-        fields = '__all__'
-        model = User
+    username = serializers.SlugField(
+        max_length=USERNAME_MAX_LENGTH,
+        required=True
+    )
+    confirmation_code = serializers.CharField()
 
 
-class InitialRegisterDataSerializer(serializers.Serializer):
-    """Сериализатор входящих данных пользователя."""
-
-    username = serializers.CharField()
-    email = serializers.EmailField()
-
-
-class RegisterDataSerializer(serializers.ModelSerializer):
+class RegisterDataSerializer(
+    ValidateEmailMixin, ValidateUsernameMixin, serializers.ModelSerializer
+):
     """Сериализатор для данных регистрации."""
 
-    def validate_username(self, value):
-        if not re.match(r'^[\w.@+-]+\Z', value):
-            raise ValidationError('Недопустимый никнейм.')
-        if value.lower() == 'me':
-            raise serializers.ValidationError(
-                'Нельзя использовать \'me\' в качестве логина')
-        return value
+    email = serializers.EmailField(max_length=EMAIL_MAX_LENGTH)
+    username = serializers.CharField(max_length=USERNAME_MAX_LENGTH)
 
     class Meta:
-        fields = ('username', 'email')
         model = User
+        fields = ('username', 'email')
 
+    def validate(self, data):
+        """Проверка уникальности email и username."""
+        email = data.get('email')
+        username = data.get('username')
 
-class TitleSerializer(serializers.ModelSerializer):
-    """Сериализатор для произведений."""
-    rating = serializers.IntegerField(read_only=True)
-    genre = GenreSerializer(many=True, source='genre')
-    category = CategorySerializer()
+        if User.objects.filter(email=email).exists():
+            if not User.objects.filter(username=username).exists():
+                raise serializers.ValidationError(
+                    'Этот email уже используется под другим username.'
+                    )
 
-    class Meta:
-        model = Title
-        fields = ('id', 'name', 'year', 'rating', 'description', 'genre',
-                  'category')
+        return data
+
+    def create(self, validated_data):
+        """Создание или получение пользователя."""
+        user, created = User.objects.get_or_create(
+            username=validated_data['username'],
+            defaults={'email': validated_data['email']}
+        )
+        if not created and user.email != validated_data['email']:
+            raise serializers.ValidationError(
+                'Имя пользователя используется под другим email.'
+            )
+        return user
