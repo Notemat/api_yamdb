@@ -31,3 +31,4 @@ class ValidateUsernameMixin:
         if User.objects.filter(username=value).exists():
             raise ValidationError('Данный username уже используется.')
         return value
+    

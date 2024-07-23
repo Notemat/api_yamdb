@@ -141,30 +141,25 @@ class CommentViewSet(NotAllowedPutMixin, viewsets.ModelViewSet):
 @api_view(['POST'])
 def send_confirmation_code(request):
     """Функция для получения кода."""
-    username = request.data.get('username')
-    email = request.data.get('email')
+    serializer = RegisterDataSerializer(data=request.data)
+    serializer.is_valid(raise_exception=True)
+    user = serializer.save()
 
-    if not User.objects.filter(username=username, email=email).exists():
-        serializer = RegisterDataSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        serializer.save()
-
-    user = get_object_or_404(User, username=username, email=email)
     confirmation_code = default_token_generator.make_token(user)
     send_mail(
         'Код подтверждения',
         confirmation_code,
         settings.ADMIN_EMAIL,
-        [email],
+        [user.email],
         fail_silently=False,
     )
+
     user_serializer = RegisterDataSerializer(user)
 
     return Response(
         user_serializer.data,
         status=status.HTTP_200_OK
     )
-
 
 @api_view(['POST'])
 def send_token(request):

@@ -157,11 +157,49 @@ class TokenSerializer(serializers.Serializer):
     confirmation_code = serializers.CharField()
 
 
-class RegisterDataSerializer(
-    ValidateUsernameMixin, serializers.ModelSerializer
-):
+class RegisterDataSerializer(serializers.ModelSerializer):
     """Сериализатор для данных регистрации."""
+    
+    username = serializers.CharField(max_length=USERNAME_MAX_LENGTH)
+    email = serializers.EmailField(max_length=EMAIL_MAX_LENGTH)
 
     class Meta:
         model = User
         fields = ('username', 'email')
+
+    def validate_username(self, value):
+        """Валидация имени пользователя."""
+        if not re.match(r'^[\w.@+-]+\Z', value):
+            raise serializers.ValidationError('Недопустимый никнейм.')
+        if value == 'me':
+            raise serializers.ValidationError('Имя пользователя "me" запрещено.')
+        return value
+
+    def validate_email(self, value):
+        """Проверка валидности email."""
+        if not re.match(r"^[^@]+@[^@]+\.[^@]+$", value):
+            raise ValidationError("Неверный формат email.")
+        return value
+
+    def validate(self, data):
+        """Проверка уникальности email и username."""
+        email = data.get('email')
+        username = data.get('username')
+
+        if User.objects.filter(email=email).exists():
+            if not User.objects.filter(username=username).exists():
+                raise serializers.ValidationError(
+                    'Этот email уже используется другим username.'
+                    )
+
+        return data
+
+    def create(self, validated_data):
+        """Создание или получение пользователя."""
+        user, created = User.objects.get_or_create(
+            username=validated_data['username'],
+            defaults={'email': validated_data['email']}
+        )
+        if not created and user.email != validated_data['email']:
+            raise serializers.ValidationError('Имя пользователя используется другим email.')
+        return user
