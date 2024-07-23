@@ -20,9 +20,11 @@ from api.filters import TitlesFilter
 from api.mixins import NotAllowedPutMixin
 from api.permissions import (IsAdminOrReadPermission, IsAdminPermission,
                              IsAuthorOrModeratorOrAdminPermission)
-from api.serializers import (CategorySerializer, CommentSerializer,
-                             GenreSerializer, InitialRegisterDataSerializer,
-                             RegisterDataSerializer, ReviewSerializer,
+from api.serializers import (CategorySerializer,
+                             RegisterDataSerializer,
+                             CommentSerializer,
+                             GenreSerializer,
+                             ReviewSerializer,
                              TitleReadSerializer, TitleWriteSerializer,
                              TokenSerializer, UserSerializer)
 
@@ -124,40 +126,35 @@ class CommentViewSet(NotAllowedPutMixin, viewsets.ModelViewSet):
         )
 
 
-@api_view(['POST'])
-def send_confirmation_code(request):
-    """Функция для получения кода."""
-    serializer = InitialRegisterDataSerializer(data=request.data)
-    serializer.is_valid(raise_exception=True)
-    username = serializer.validated_data['username']
-    email = serializer.validated_data['email']
-    if User.objects.filter(username=username, email=email).exists():
-        user = User.objects.get(username=username, email=email)
-        confirmation_code = default_token_generator.make_token(user)
-        send_mail(
-            'Код подтверждения',
-            f'{confirmation_code}',
-            f'{settings.ADMIN_EMAIL}',
-            [f'{email}'],
-            fail_silently=False,
-        )
-        return Response(serializer.data, status=status.HTTP_200_OK)
-    serializer = RegisterDataSerializer(data=request.data)
-    serializer.is_valid(raise_exception=True)
-    serializer.save()
-    username = serializer.validated_data['username']
-    email = serializer.validated_data['email']
-    user = get_object_or_404(User, username=username, email=email)
+def send_confirmation_email(user, email):
+    """Отправка письма с кодом подтверждения."""
     confirmation_code = default_token_generator.make_token(user)
     send_mail(
         'Код подтверждения',
-        f'{confirmation_code}',
-        f'{settings.ADMIN_EMAIL}',
-        [f'{email}'],
+        confirmation_code,
+        settings.ADMIN_EMAIL,
+        [email],
         fail_silently=False,
     )
+
+
+@api_view(['POST'])
+def send_confirmation_code(request):
+    """Функция для получения кода."""
+    username = request.data.get('username')
+    email = request.data.get('email')
+
+    if not User.objects.filter(username=username, email=email).exists():
+        serializer = RegisterDataSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+
+    user = get_object_or_404(User, username=username, email=email)
+    send_confirmation_email(user=user, email=email)
+    user_serializer = RegisterDataSerializer(user)
+
     return Response(
-        serializer.data,
+        user_serializer.data,
         status=status.HTTP_200_OK
     )
 
