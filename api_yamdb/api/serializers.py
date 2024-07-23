@@ -1,15 +1,12 @@
-import re
 from datetime import datetime
 
 from django.core.exceptions import ValidationError
-from django.core.validators import RegexValidator, EmailValidator
-from rest_framework.validators import UniqueValidator
 from rest_framework import serializers
-
 from reviews.constants import (EMAIL_MAX_LENGTH, MAX_SCORE_VALUE,
                                MIN_SCORE_VALUE, USERNAME_MAX_LENGTH)
-from reviews.models import (Category, Comment, Genre, Review,
-                            Title, User)
+
+from reviews.models import Category, Comment, Genre, Review, Title, User
+from api.mixins import ValidateEmailMixin, ValidateUsernameMixin
 
 
 class CategorySerializer(serializers.ModelSerializer):
@@ -121,7 +118,9 @@ class CommentSerializer(serializers.ModelSerializer):
         fields = ('id', 'text', 'author', 'pub_date')
 
 
-class UserSerializer(serializers.ModelSerializer):
+class UserSerializer(
+    ValidateEmailMixin, ValidateUsernameMixin, serializers.ModelSerializer
+):
     """Сериализатор для пользователей."""
 
     username = serializers.CharField(max_length=USERNAME_MAX_LENGTH)
@@ -142,21 +141,15 @@ class UserSerializer(serializers.ModelSerializer):
 
     def validate_username(self, value):
         """Валидация имени пользователя."""
-        if not re.match(r'^[\w.@+-]+\Z', value):
-            raise ValidationError('Недопустимый никнейм.')
-        if value == 'me':
-            raise ValidationError('Имя пользователя "me" запрещено.')
         if User.objects.filter(username=value).exists():
             raise ValidationError('Данный username уже используется.')
-        return value
+        return super().validate_username(value)
 
     def validate_email(self, value):
         """Проверка валидности email."""
-        if not re.match(r"^[^@]+@[^@]+\.[^@]+$", value):
-            raise ValidationError("Неверный формат email.")
         if User.objects.filter(email=value).exists():
             raise ValidationError('Данный email уже используется.')
-        return value
+        return super().validate_email(value)
 
 
 class TokenSerializer(serializers.Serializer):
@@ -169,19 +162,39 @@ class TokenSerializer(serializers.Serializer):
     confirmation_code = serializers.CharField()
 
 
-class RegisterDataSerializer(serializers.ModelSerializer):
+class RegisterDataSerializer(
+    ValidateEmailMixin, ValidateUsernameMixin, serializers.ModelSerializer
+):
     """Сериализатор для данных регистрации."""
+
+    email = serializers.EmailField(max_length=EMAIL_MAX_LENGTH)
+    username = serializers.CharField(max_length=USERNAME_MAX_LENGTH)
 
     class Meta:
         model = User
         fields = ('username', 'email')
 
-    def validate_username(self, value):
-        # Проверка на допустимые символы в имени пользователя
-        if not re.match(r'^[\w.@+-]+\Z', value):
-            raise ValidationError('Недопустимый никнейм.')
-        # Проверка на запрещенное имя пользователя 'me'
-        if value == 'me':
+    def validate(self, data):
+        """Проверка уникальности email и username."""
+        email = data.get('email')
+        username = data.get('username')
+
+        if User.objects.filter(email=email).exists():
+            if not User.objects.filter(username=username).exists():
+                raise serializers.ValidationError(
+                    'Этот email уже используется под другим username.'
+                    )
+
+        return data
+
+    def create(self, validated_data):
+        """Создание или получение пользователя."""
+        user, created = User.objects.get_or_create(
+            username=validated_data['username'],
+            defaults={'email': validated_data['email']}
+        )
+        if not created and user.email != validated_data['email']:
             raise serializers.ValidationError(
-                'Нельзя использовать \'me\' в качестве логина')
-        return value
+                'Имя пользователя используется под другим email.'
+            )
+        return user

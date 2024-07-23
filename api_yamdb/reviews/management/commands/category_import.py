@@ -1,6 +1,7 @@
 import os
 
 from django.conf import settings
+
 from reviews.management.commands import data_import
 from reviews.models import Category
 
