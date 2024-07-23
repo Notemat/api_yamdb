@@ -184,7 +184,6 @@ class RegisterDataSerializer(
                 raise serializers.ValidationError(
                     'Этот email уже используется под другим username.'
                     )
-
         return data
 
     def create(self, validated_data):
