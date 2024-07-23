@@ -169,23 +169,18 @@ class TokenSerializer(serializers.Serializer):
     confirmation_code = serializers.CharField()
 
 
-class InitialRegisterDataSerializer(serializers.Serializer):
-    """Сериализатор входящих данных пользователя."""
-
-    username = serializers.CharField()
-    email = serializers.EmailField()
-
-
 class RegisterDataSerializer(serializers.ModelSerializer):
     """Сериализатор для данных регистрации."""
 
     class Meta:
-        fields = ('username', 'email')
         model = User
+        fields = ('username', 'email')
 
     def validate_username(self, value):
+        # Проверка на допустимые символы в имени пользователя
         if not re.match(r'^[\w.@+-]+\Z', value):
             raise ValidationError('Недопустимый никнейм.')
+        # Проверка на запрещенное имя пользователя 'me'
         if value == 'me':
             raise serializers.ValidationError(
                 'Нельзя использовать \'me\' в качестве логина')
