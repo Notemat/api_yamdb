@@ -126,16 +126,16 @@ class CommentViewSet(NotAllowedPutMixin, viewsets.ModelViewSet):
         )
 
 
-def send_confirmation_email(user, email):
-    """Отправка письма с кодом подтверждения."""
-    confirmation_code = default_token_generator.make_token(user)
-    send_mail(
-        'Код подтверждения',
-        confirmation_code,
-        settings.ADMIN_EMAIL,
-        [email],
-        fail_silently=False,
-    )
+# def send_confirmation_email(user, email):
+#     """Отправка письма с кодом подтверждения."""
+#     confirmation_code = default_token_generator.make_token(user)
+#     send_mail(
+#         'Код подтверждения',
+#         confirmation_code,
+#         settings.ADMIN_EMAIL,
+#         [email],
+#         fail_silently=False,
+#     )
 
 
 @api_view(['POST'])
@@ -150,7 +150,14 @@ def send_confirmation_code(request):
         serializer.save()
 
     user = get_object_or_404(User, username=username, email=email)
-    send_confirmation_email(user=user, email=email)
+    confirmation_code = default_token_generator.make_token(user)
+    send_mail(
+        'Код подтверждения',
+        confirmation_code,
+        settings.ADMIN_EMAIL,
+        [email],
+        fail_silently=False,
+    )
     user_serializer = RegisterDataSerializer(user)
 
     return Response(

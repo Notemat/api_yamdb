@@ -2,14 +2,13 @@ import re
 from datetime import datetime
 
 from django.core.exceptions import ValidationError
-from django.core.validators import RegexValidator, EmailValidator
-from rest_framework.validators import UniqueValidator
 from rest_framework import serializers
 
 from reviews.constants import (EMAIL_MAX_LENGTH, MAX_SCORE_VALUE,
                                MIN_SCORE_VALUE, USERNAME_MAX_LENGTH)
 from reviews.models import (Category, Comment, Genre, Review,
                             Title, User)
+from api.mixins import ValidateUsernameMixin
 
 
 class CategorySerializer(serializers.ModelSerializer):
@@ -121,10 +120,9 @@ class CommentSerializer(serializers.ModelSerializer):
         fields = ('id', 'text', 'author', 'pub_date')
 
 
-class UserSerializer(serializers.ModelSerializer):
+class UserSerializer(ValidateUsernameMixin, serializers.ModelSerializer):
     """Сериализатор для пользователей."""
 
-    username = serializers.CharField(max_length=USERNAME_MAX_LENGTH)
     email = serializers.EmailField(max_length=EMAIL_MAX_LENGTH)
 
     class Meta:
@@ -139,16 +137,6 @@ class UserSerializer(serializers.ModelSerializer):
             'username'
         )
         model = User
-
-    def validate_username(self, value):
-        """Валидация имени пользователя."""
-        if not re.match(r'^[\w.@+-]+\Z', value):
-            raise ValidationError('Недопустимый никнейм.')
-        if value == 'me':
-            raise ValidationError('Имя пользователя "me" запрещено.')
-        if User.objects.filter(username=value).exists():
-            raise ValidationError('Данный username уже используется.')
-        return value
 
     def validate_email(self, value):
         """Проверка валидности email."""
@@ -169,19 +157,11 @@ class TokenSerializer(serializers.Serializer):
     confirmation_code = serializers.CharField()
 
 
-class RegisterDataSerializer(serializers.ModelSerializer):
+class RegisterDataSerializer(
+    ValidateUsernameMixin, serializers.ModelSerializer
+):
     """Сериализатор для данных регистрации."""
 
     class Meta:
         model = User
         fields = ('username', 'email')
-
-    def validate_username(self, value):
-        # Проверка на допустимые символы в имени пользователя
-        if not re.match(r'^[\w.@+-]+\Z', value):
-            raise ValidationError('Недопустимый никнейм.')
-        # Проверка на запрещенное имя пользователя 'me'
-        if value == 'me':
-            raise serializers.ValidationError(
-                'Нельзя использовать \'me\' в качестве логина')
-        return value
