@@ -1,6 +1,4 @@
 """Модели приложения reviews."""
-from datetime import datetime
-
 from django.contrib.auth.models import AbstractUser
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
@@ -8,7 +6,7 @@ from django.db import models
 from reviews.constants import (EMAIL_MAX_LENGTH, FIELD_MAX_LENGTH,
                                LENGTH_TO_DISPLAY, MAX_SCORE_VALUE,
                                MIN_SCORE_VALUE, USERNAME_MAX_LENGTH)
-from reviews.validators import validate_username
+from reviews.validators import validate_year, validate_username
 
 
 class BaseCategoryGenreModel(models.Model):
@@ -85,7 +83,7 @@ class Title(models.Model):
         verbose_name='Название'
     )
     year = models.PositiveSmallIntegerField(
-        validators=[MaxValueValidator(datetime.now().year)],
+        validators=[validate_year],
         verbose_name='Год выпуска'
     )
     description = models.TextField(verbose_name='Описание')

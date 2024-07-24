@@ -1,4 +1,5 @@
 import re
+from datetime import timezone
 
 from django.core.exceptions import ValidationError
 
@@ -12,8 +13,9 @@ def validate_username(self, value):
     return value
 
 
-def validate_email(self, value):
-    """Проверка валидности email."""
-    if not re.match(r"^[^@]+@[^@]+\.[^@]+$", value):
-        raise ValidationError("Неверный формат email.")
-    return value
+def validate_year(value):
+    current_year = timezone.now().year
+    if value > current_year:
+        raise ValidationError(
+            f'Год выпуска не может быть больше {current_year}.'
+        )
