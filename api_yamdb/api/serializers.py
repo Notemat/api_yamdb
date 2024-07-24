@@ -156,7 +156,7 @@ class TokenSerializer(serializers.Serializer):
 
 
 class RegisterDataSerializer(
-    ValidateEmailMixin, ValidateUsernameMixin, serializers.ModelSerializer
+    ValidateUsernameMixin, ValidateEmailMixin, serializers.ModelSerializer
 ):
     """Сериализатор для данных регистрации."""
 
@@ -172,21 +172,27 @@ class RegisterDataSerializer(
         email = data.get('email')
         username = data.get('username')
 
+        if User.objects.filter(username=username, email=email).exists():
+            return data
+
         if User.objects.filter(email=email).exists():
-            if not User.objects.filter(username=username).exists():
-                raise serializers.ValidationError(
-                    'Этот email уже используется под другим username.'
-                )
+            raise serializers.ValidationError(
+                'Этот email уже используется под другим username.'
+            )
+
+        if User.objects.filter(username=username).exists():
+            raise serializers.ValidationError(
+                'Имя пользователя используется под другим email.'
+            )
+
         return data
 
     def create(self, validated_data):
         """Создание или получение пользователя."""
+
         user, created = User.objects.get_or_create(
             username=validated_data['username'],
-            defaults={'email': validated_data['email']}
+            email=validated_data['email']
         )
-        if not created and user.email != validated_data['email']:
-            raise serializers.ValidationError(
-                'Имя пользователя используется под другим email.'
-            )
+
         return user

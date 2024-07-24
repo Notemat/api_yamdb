@@ -1,6 +1,4 @@
 """Модели приложения reviews."""
-from datetime import datetime
-
 from django.contrib.auth.models import AbstractUser
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
@@ -8,6 +6,7 @@ from django.db import models
 from reviews.constants import (EMAIL_MAX_LENGTH, FIELD_MAX_LENGTH,
                                LENGTH_TO_DISPLAY, MAX_SCORE_VALUE,
                                MIN_SCORE_VALUE, USERNAME_MAX_LENGTH)
+from reviews.validators import validate_year, validate_username
 
 
 class BaseCategoryGenreModel(models.Model):
@@ -38,10 +37,10 @@ class User(AbstractUser):
         (MODERATOR, 'Модератор'),
     ]
 
-    max_role_length = max(len(role[1]) for role in USER_ROLE)
     username = models.CharField(
         max_length=USERNAME_MAX_LENGTH,
-        unique=True
+        unique=True,
+        validators=[validate_username]
     )
     email = models.EmailField(
         'Электронная почта',
@@ -50,7 +49,9 @@ class User(AbstractUser):
     )
     bio = models.TextField('О себе', blank=True)
     role = models.CharField(
-        'Роль', max_length=max_role_length, choices=USER_ROLE, default='user'
+        'Роль',
+        max_length=max(len(role[1]) for role in USER_ROLE),
+        choices=USER_ROLE, default='user'
     )
 
     class Meta:
@@ -82,7 +83,7 @@ class Title(models.Model):
         verbose_name='Название'
     )
     year = models.PositiveSmallIntegerField(
-        validators=[MaxValueValidator(datetime.now().year)],
+        validators=[validate_year],
         verbose_name='Год выпуска'
     )
     description = models.TextField(verbose_name='Описание')
@@ -113,7 +114,6 @@ class Genre(BaseCategoryGenreModel):
     """Модель жанра."""
 
     class Meta:
-        ordering = ['slug']
         verbose_name = 'Жанр'
         verbose_name_plural = 'Жанры'
 

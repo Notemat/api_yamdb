@@ -56,11 +56,11 @@ class TitleViewSet(NotAllowedPutMixin, viewsets.ModelViewSet):
     """CRUD для модели Title."""
 
     queryset = Title.objects.annotate(
-        rating=Avg('reviews__score'))
+        rating=Avg('reviews__score')).order_by('year')
     permission_classes = (IsAdminOrReadPermission, )
     filter_backends = (DjangoFilterBackend, OrderingFilter)
     filterset_class = TitlesFilter
-    ordering_fields = ('pk', 'year')
+    ordering_fields = ('pk', 'year', 'rating')
     ordering = ('pk')
 
     def get_serializer_class(self):
@@ -139,11 +139,8 @@ def send_confirmation_code(request):
         [user.email],
         fail_silently=False,
     )
-
-    user_serializer = RegisterDataSerializer(user)
-
     return Response(
-        user_serializer.data,
+        serializer.data,
         status=status.HTTP_200_OK
     )
 
@@ -197,6 +194,5 @@ class UserViewSet(NotAllowedPutMixin, viewsets.ModelViewSet):
         serializer = self.get_serializer(
             request.user, data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
-        serializer.validated_data['role'] = request.user.role
-        serializer.save()
+        serializer.save(role=request.user.role)
         return Response(serializer.data, status=status.HTTP_200_OK)
