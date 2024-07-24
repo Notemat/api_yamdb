@@ -1,6 +1,4 @@
 """Модели приложения reviews."""
-from datetime import datetime
-
 from django.contrib.auth.models import AbstractUser
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
@@ -8,7 +6,23 @@ from django.db import models
 from reviews.constants import (EMAIL_MAX_LENGTH, FIELD_MAX_LENGTH,
                                LENGTH_TO_DISPLAY, MAX_SCORE_VALUE,
                                MIN_SCORE_VALUE, USERNAME_MAX_LENGTH)
-from reviews.mixins import CategoryGenreMixin
+from reviews.validators import validate_year, validate_username
+
+
+class BaseCategoryGenreModel(models.Model):
+    """Базовая модель категории и жанра."""
+
+    name = models.CharField(
+        max_length=FIELD_MAX_LENGTH, verbose_name='Название'
+    )
+    slug = models.SlugField(unique=True, verbose_name='Слаг')
+
+    class Meta:
+        ordering = ['slug']
+        abstract = True
+
+    def __str__(self):
+        return self.name[:LENGTH_TO_DISPLAY]
 
 
 class User(AbstractUser):
@@ -23,11 +37,10 @@ class User(AbstractUser):
         (MODERATOR, 'Модератор'),
     ]
 
-    max_role_length = max(len(role[1]) for role in USER_ROLE)
     username = models.CharField(
         max_length=USERNAME_MAX_LENGTH,
         unique=True,
-        null=False
+        validators=[validate_username]
     )
     email = models.EmailField(
         'Электронная почта',
@@ -36,7 +49,9 @@ class User(AbstractUser):
     )
     bio = models.TextField('О себе', blank=True)
     role = models.CharField(
-        'Роль', max_length=max_role_length, choices=USER_ROLE, default='user'
+        'Роль',
+        max_length=max(len(role[1]) for role in USER_ROLE),
+        choices=USER_ROLE, default='user'
     )
 
     class Meta:
@@ -45,6 +60,9 @@ class User(AbstractUser):
         ordering = ['username']
         verbose_name = 'Пользователь'
         verbose_name_plural = 'Пользователи'
+
+    def __str__(self):
+        return self.username
 
     @property
     def is_admin(self):
@@ -56,17 +74,16 @@ class User(AbstractUser):
         """Проверка на модератора."""
         return self.role == self.MODERATOR
 
-    def __str__(self):
-        return self.username
-
 
 class Title(models.Model):
+    """Модель произведения."""
+
     name = models.CharField(
         max_length=FIELD_MAX_LENGTH,
         verbose_name='Название'
     )
     year = models.PositiveSmallIntegerField(
-        validators=[MaxValueValidator(datetime.now().year)],
+        validators=[validate_year],
         verbose_name='Год выпуска'
     )
     description = models.TextField(verbose_name='Описание')
@@ -85,23 +102,25 @@ class Title(models.Model):
         return self.name[:LENGTH_TO_DISPLAY]
 
 
-class Category(CategoryGenreMixin):
+class Category(BaseCategoryGenreModel):
+    """Модель категории."""
 
     class Meta:
-        ordering = ['slug']
         verbose_name = 'Категория'
         verbose_name_plural = 'Категории'
 
 
-class Genre(CategoryGenreMixin):
+class Genre(BaseCategoryGenreModel):
+    """Модель жанра."""
 
     class Meta:
-        ordering = ['slug']
         verbose_name = 'Жанр'
         verbose_name_plural = 'Жанры'
 
 
 class GenreTitle(models.Model):
+    """Связанная модель жанра и произведения."""
+
     title = models.ForeignKey(Title, on_delete=models.CASCADE)
     genre = models.ForeignKey(Genre, on_delete=models.CASCADE)
 
@@ -152,6 +171,7 @@ class Review(models.Model):
 
 class Comment(models.Model):
     """Модель комментария."""
+
     review = models.ForeignKey(
         Review,
         on_delete=models.CASCADE,
