@@ -60,7 +60,7 @@ class TitleViewSet(NotAllowedPutMixin, viewsets.ModelViewSet):
     permission_classes = (IsAdminOrReadPermission, )
     filter_backends = (DjangoFilterBackend, OrderingFilter)
     filterset_class = TitlesFilter
-    ordering_fields = ('pk', 'year')
+    ordering_fields = ('pk', 'year', 'rating')
     ordering = ('pk')
 
     def get_serializer_class(self):
@@ -139,11 +139,8 @@ def send_confirmation_code(request):
         [user.email],
         fail_silently=False,
     )
-
-    user_serializer = RegisterDataSerializer(user)
-
     return Response(
-        user_serializer.data,
+        serializer.data,
         status=status.HTTP_200_OK
     )
 
