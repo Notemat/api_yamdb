@@ -11,6 +11,8 @@ from reviews.constants import (EMAIL_MAX_LENGTH, FIELD_MAX_LENGTH,
 
 
 class BaseCategoryGenreModel(models.Model):
+    """Базовая модель категории и жанра."""
+
     name = models.CharField(
         max_length=FIELD_MAX_LENGTH, verbose_name='Название'
     )
@@ -58,6 +60,9 @@ class User(AbstractUser):
         verbose_name = 'Пользователь'
         verbose_name_plural = 'Пользователи'
 
+    def __str__(self):
+        return self.username
+
     @property
     def is_admin(self):
         """Проверка на админа."""
@@ -68,11 +73,10 @@ class User(AbstractUser):
         """Проверка на модератора."""
         return self.role == self.MODERATOR
 
-    def __str__(self):
-        return self.username
-
 
 class Title(models.Model):
+    """Модель произведения."""
+
     name = models.CharField(
         max_length=FIELD_MAX_LENGTH,
         verbose_name='Название'
@@ -98,6 +102,7 @@ class Title(models.Model):
 
 
 class Category(BaseCategoryGenreModel):
+    """Модель категории."""
 
     class Meta:
         verbose_name = 'Категория'
@@ -105,6 +110,7 @@ class Category(BaseCategoryGenreModel):
 
 
 class Genre(BaseCategoryGenreModel):
+    """Модель жанра."""
 
     class Meta:
         ordering = ['slug']
@@ -113,6 +119,8 @@ class Genre(BaseCategoryGenreModel):
 
 
 class GenreTitle(models.Model):
+    """Связанная модель жанра и произведения."""
+
     title = models.ForeignKey(Title, on_delete=models.CASCADE)
     genre = models.ForeignKey(Genre, on_delete=models.CASCADE)
 
@@ -163,6 +171,7 @@ class Review(models.Model):
 
 class Comment(models.Model):
     """Модель комментария."""
+
     review = models.ForeignKey(
         Review,
         on_delete=models.CASCADE,
