@@ -38,7 +38,6 @@ class User(AbstractUser):
         (MODERATOR, 'Модератор'),
     ]
 
-    max_role_length = max(len(role[1]) for role in USER_ROLE)
     username = models.CharField(
         max_length=USERNAME_MAX_LENGTH,
         unique=True
@@ -50,7 +49,9 @@ class User(AbstractUser):
     )
     bio = models.TextField('О себе', blank=True)
     role = models.CharField(
-        'Роль', max_length=max_role_length, choices=USER_ROLE, default='user'
+        'Роль',
+        max_length=max(len(role[1]) for role in USER_ROLE),
+        choices=USER_ROLE, default='user'
     )
 
     class Meta:
