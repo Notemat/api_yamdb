@@ -8,6 +8,7 @@ from django.db import models
 from reviews.constants import (EMAIL_MAX_LENGTH, FIELD_MAX_LENGTH,
                                LENGTH_TO_DISPLAY, MAX_SCORE_VALUE,
                                MIN_SCORE_VALUE, USERNAME_MAX_LENGTH)
+from reviews.validators import validate_username
 
 
 class BaseCategoryGenreModel(models.Model):
@@ -40,7 +41,8 @@ class User(AbstractUser):
 
     username = models.CharField(
         max_length=USERNAME_MAX_LENGTH,
-        unique=True
+        unique=True,
+        validators=[validate_username]
     )
     email = models.EmailField(
         'Электронная почта',
@@ -114,7 +116,6 @@ class Genre(BaseCategoryGenreModel):
     """Модель жанра."""
 
     class Meta:
-        ordering = ['slug']
         verbose_name = 'Жанр'
         verbose_name_plural = 'Жанры'
 
