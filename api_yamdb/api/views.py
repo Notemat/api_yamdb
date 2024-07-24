@@ -194,6 +194,5 @@ class UserViewSet(NotAllowedPutMixin, viewsets.ModelViewSet):
         serializer = self.get_serializer(
             request.user, data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
-        serializer.validated_data['role'] = request.user.role
-        serializer.save()
+        serializer.save(role=request.user.role)
         return Response(serializer.data, status=status.HTTP_200_OK)
