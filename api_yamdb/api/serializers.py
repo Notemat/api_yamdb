@@ -176,17 +176,14 @@ class RegisterDataSerializer(
             return data
 
         if User.objects.filter(email=email).exists():
-            if not User.objects.filter(username=username).exists():
-                raise serializers.ValidationError(
-                    'Этот email уже используется под другим username.'
-                )
+            raise serializers.ValidationError(
+                'Этот email уже используется под другим username.'
+            )
 
         if User.objects.filter(username=username).exists():
-            existing_user = User.objects.get(username=username)
-            if existing_user.email != email:
-                raise serializers.ValidationError(
-                    'Имя пользователя используется под другим email.'
-                )
+            raise serializers.ValidationError(
+                'Имя пользователя используется под другим email.'
+            )
 
         return data
 
