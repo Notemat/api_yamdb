@@ -8,7 +8,20 @@ from django.db import models
 from reviews.constants import (EMAIL_MAX_LENGTH, FIELD_MAX_LENGTH,
                                LENGTH_TO_DISPLAY, MAX_SCORE_VALUE,
                                MIN_SCORE_VALUE, USERNAME_MAX_LENGTH)
-from reviews.mixins import CategoryGenreMixin
+
+
+class BaseCategoryGenreModel(models.Model):
+    name = models.CharField(
+        max_length=FIELD_MAX_LENGTH, verbose_name='Название'
+    )
+    slug = models.SlugField(unique=True, verbose_name='Слаг')
+
+    class Meta:
+        ordering = ['slug']
+        abstract = True
+
+    def __str__(self):
+        return self.name[:LENGTH_TO_DISPLAY]
 
 
 class User(AbstractUser):
@@ -26,8 +39,7 @@ class User(AbstractUser):
     max_role_length = max(len(role[1]) for role in USER_ROLE)
     username = models.CharField(
         max_length=USERNAME_MAX_LENGTH,
-        unique=True,
-        null=False
+        unique=True
     )
     email = models.EmailField(
         'Электронная почта',
@@ -85,15 +97,14 @@ class Title(models.Model):
         return self.name[:LENGTH_TO_DISPLAY]
 
 
-class Category(CategoryGenreMixin):
+class Category(BaseCategoryGenreModel):
 
     class Meta:
-        ordering = ['slug']
         verbose_name = 'Категория'
         verbose_name_plural = 'Категории'
 
 
-class Genre(CategoryGenreMixin):
+class Genre(BaseCategoryGenreModel):
 
     class Meta:
         ordering = ['slug']
