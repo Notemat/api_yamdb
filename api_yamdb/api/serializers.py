@@ -87,7 +87,7 @@ class ReviewSerializer(serializers.ModelSerializer):
         """Проверка, что оценка находится в диапазоне от 1 до 10."""
         if not MIN_SCORE_VALUE <= value <= MAX_SCORE_VALUE:
             raise serializers.ValidationError(
-                f'Оценка должна быть в диапазоне от '
+                'Оценка должна быть в диапазоне от '
                 f'{MIN_SCORE_VALUE} до {MAX_SCORE_VALUE}.'
             )
         return value
@@ -119,12 +119,11 @@ class CommentSerializer(serializers.ModelSerializer):
 
 
 class UserSerializer(
-    ValidateEmailMixin, ValidateUsernameMixin, serializers.ModelSerializer
+    ValidateUsernameMixin, serializers.ModelSerializer
 ):
     """Сериализатор для пользователей."""
 
     username = serializers.CharField(max_length=USERNAME_MAX_LENGTH)
-    email = serializers.EmailField(max_length=EMAIL_MAX_LENGTH)
 
     class Meta:
         """Мета класс пользователя."""
@@ -144,12 +143,6 @@ class UserSerializer(
         if User.objects.filter(username=value).exists():
             raise ValidationError('Данный username уже используется.')
         return super().validate_username(value)
-
-    def validate_email(self, value):
-        """Проверка валидности email."""
-        if User.objects.filter(email=value).exists():
-            raise ValidationError('Данный email уже используется.')
-        return super().validate_email(value)
 
 
 class TokenSerializer(serializers.Serializer):
