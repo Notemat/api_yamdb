@@ -72,6 +72,7 @@ class TitleViewSet(NotAllowedPutMixin, viewsets.ModelViewSet):
 class ReviewViewSet(NotAllowedPutMixin, viewsets.ModelViewSet):
     """
     Вьюсет для модели отзывов.
+
     Переопределяем get_queryset для получения title_id и
     perform_create для сохранения автора и произведения.
     """
@@ -193,10 +194,9 @@ class UserViewSet(NotAllowedPutMixin, viewsets.ModelViewSet):
         if request.method == 'GET':
             serializer = self.get_serializer(request.user)
             return Response(serializer.data, status=status.HTTP_200_OK)
-        else:
-            serializer = self.get_serializer(
-                request.user, data=request.data, partial=True)
-            serializer.is_valid(raise_exception=True)
-            serializer.validated_data['role'] = request.user.role
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_200_OK)
+        serializer = self.get_serializer(
+            request.user, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        serializer.validated_data['role'] = request.user.role
+        serializer.save()
+        return Response(serializer.data, status=status.HTTP_200_OK)
