@@ -172,6 +172,9 @@ class RegisterDataSerializer(
         email = data.get('email')
         username = data.get('username')
 
+        if User.objects.filter(username=username, email=email).exists():
+            return data
+
         if User.objects.filter(email=email).exists():
             if not User.objects.filter(username=username).exists():
                 raise serializers.ValidationError(
