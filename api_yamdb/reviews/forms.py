@@ -4,7 +4,7 @@ from django.contrib.auth.forms import UserChangeForm, UserCreationForm
 from reviews.models import Genre, Title, User
 
 
-class TitleForm(forms.ModelForm):
+class AdminTitleForm(forms.ModelForm):
     """Форма для отображение жанров в модели произведения."""
     genre = forms.ModelMultipleChoiceField(
         queryset=Genre.objects.all(),
@@ -18,12 +18,12 @@ class TitleForm(forms.ModelForm):
         fields = '__all__'
 
 
-class MyUserChangeForm(UserChangeForm):
+class AdminUserChangeForm(UserChangeForm):
     class Meta(UserChangeForm.Meta):
         model = User
 
 
-class MyUserCreationForm(UserCreationForm):
+class AdminUserCreationForm(UserCreationForm):
     class Meta(UserCreationForm.Meta):
         model = User
 
