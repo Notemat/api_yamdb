@@ -15,7 +15,6 @@ from rest_framework.permissions import (SAFE_METHODS, IsAuthenticated,
 from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import AccessToken, RefreshToken
 
-from reviews.models import Category, Genre, Review, Title, User
 from api.filters import TitlesFilter
 from api.mixins import NotAllowedPutMixin
 from api.permissions import (IsAdminOrReadPermission, IsAdminPermission,
@@ -25,10 +24,13 @@ from api.serializers import (CategorySerializer, CommentSerializer,
                              ReviewSerializer, TitleReadSerializer,
                              TitleWriteSerializer, TokenSerializer,
                              UserSerializer)
+from reviews.models import Category, Genre, Review, Title, User
 
 
-class CategoryGenreCommon(CreateModelMixin, DestroyModelMixin,
-                          ListModelMixin, viewsets.GenericViewSet):
+class CategoryGenreCommonViewSet(
+    CreateModelMixin, DestroyModelMixin,
+    ListModelMixin, viewsets.GenericViewSet
+):
 
     permission_classes = (IsAdminOrReadPermission, )
     filter_backends = (SearchFilter, )
@@ -36,14 +38,14 @@ class CategoryGenreCommon(CreateModelMixin, DestroyModelMixin,
     lookup_field = 'slug'
 
 
-class CategoryViewSet(CategoryGenreCommon):
+class CategoryViewSet(CategoryGenreCommonViewSet):
     """list/create/delete для модели Category."""
 
     queryset = Category.objects.all()
     serializer_class = CategorySerializer
 
 
-class GenreViewSet(CategoryGenreCommon):
+class GenreViewSet(CategoryGenreCommonViewSet):
     """list/create/delete для модели Genre."""
 
     queryset = Genre.objects.all()
@@ -61,9 +63,6 @@ class TitleViewSet(NotAllowedPutMixin, viewsets.ModelViewSet):
     ordering_fields = ('pk', 'year')
     ordering = ('pk')
 
-    def get_queryset(self):
-        return super().get_queryset()
-
     def get_serializer_class(self):
         if self.request.method in SAFE_METHODS:
             return TitleReadSerializer
@@ -73,6 +72,7 @@ class TitleViewSet(NotAllowedPutMixin, viewsets.ModelViewSet):
 class ReviewViewSet(NotAllowedPutMixin, viewsets.ModelViewSet):
     """
     Вьюсет для модели отзывов.
+
     Переопределяем get_queryset для получения title_id и
     perform_create для сохранения автора и произведения.
     """
@@ -194,10 +194,9 @@ class UserViewSet(NotAllowedPutMixin, viewsets.ModelViewSet):
         if request.method == 'GET':
             serializer = self.get_serializer(request.user)
             return Response(serializer.data, status=status.HTTP_200_OK)
-        else:
-            serializer = self.get_serializer(
-                request.user, data=request.data, partial=True)
-            serializer.is_valid(raise_exception=True)
-            serializer.validated_data['role'] = request.user.role
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_200_OK)
+        serializer = self.get_serializer(
+            request.user, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        serializer.validated_data['role'] = request.user.role
+        serializer.save()
+        return Response(serializer.data, status=status.HTTP_200_OK)

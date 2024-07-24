@@ -2,11 +2,11 @@ from datetime import datetime
 
 from django.core.exceptions import ValidationError
 from rest_framework import serializers
+
+from api.mixins import ValidateEmailMixin, ValidateUsernameMixin
 from reviews.constants import (EMAIL_MAX_LENGTH, MAX_SCORE_VALUE,
                                MIN_SCORE_VALUE, USERNAME_MAX_LENGTH)
-
 from reviews.models import Category, Comment, Genre, Review, Title, User
-from api.mixins import ValidateEmailMixin, ValidateUsernameMixin
 
 
 class CategorySerializer(serializers.ModelSerializer):
@@ -30,7 +30,7 @@ class TitleReadSerializer(serializers.ModelSerializer):
 
     genre = GenreSerializer(many=True, read_only=True)
     category = CategorySerializer(read_only=True)
-    rating = serializers.IntegerField()
+    rating = serializers.IntegerField(read_only=True, default=0)
 
     class Meta:
         model = Title
@@ -46,7 +46,8 @@ class TitleWriteSerializer(serializers.ModelSerializer):
         slug_field='slug',
         queryset=Genre.objects.all(),
         required=True,
-        allow_empty=False
+        allow_empty=False,
+        allow_null=True
     )
     category = serializers.SlugRelatedField(
         slug_field='slug',
@@ -67,7 +68,6 @@ class TitleWriteSerializer(serializers.ModelSerializer):
 
     def to_representation(self, instance):
         """Метод для возвращения данных, как при GET запросе."""
-        instance.rating = getattr(instance, 'rating', 0)
         serializer = TitleReadSerializer(instance)
         return serializer.data
 
@@ -87,7 +87,7 @@ class ReviewSerializer(serializers.ModelSerializer):
         """Проверка, что оценка находится в диапазоне от 1 до 10."""
         if not MIN_SCORE_VALUE <= value <= MAX_SCORE_VALUE:
             raise serializers.ValidationError(
-                f'Оценка должна быть в диапазоне от '
+                'Оценка должна быть в диапазоне от '
                 f'{MIN_SCORE_VALUE} до {MAX_SCORE_VALUE}.'
             )
         return value
@@ -119,12 +119,11 @@ class CommentSerializer(serializers.ModelSerializer):
 
 
 class UserSerializer(
-    ValidateEmailMixin, ValidateUsernameMixin, serializers.ModelSerializer
+    ValidateUsernameMixin, serializers.ModelSerializer
 ):
     """Сериализатор для пользователей."""
 
     username = serializers.CharField(max_length=USERNAME_MAX_LENGTH)
-    email = serializers.EmailField(max_length=EMAIL_MAX_LENGTH)
 
     class Meta:
         """Мета класс пользователя."""
@@ -144,12 +143,6 @@ class UserSerializer(
         if User.objects.filter(username=value).exists():
             raise ValidationError('Данный username уже используется.')
         return super().validate_username(value)
-
-    def validate_email(self, value):
-        """Проверка валидности email."""
-        if User.objects.filter(email=value).exists():
-            raise ValidationError('Данный email уже используется.')
-        return super().validate_email(value)
 
 
 class TokenSerializer(serializers.Serializer):
@@ -183,8 +176,7 @@ class RegisterDataSerializer(
             if not User.objects.filter(username=username).exists():
                 raise serializers.ValidationError(
                     'Этот email уже используется под другим username.'
-                    )
-
+                )
         return data
 
     def create(self, validated_data):
