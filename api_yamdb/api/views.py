@@ -99,6 +99,7 @@ class ReviewViewSet(NotAllowedPutMixin, viewsets.ModelViewSet):
 class CommentViewSet(NotAllowedPutMixin, viewsets.ModelViewSet):
     """
     Вьюсет для модели комментария.
+
     Переопределяем get_queryset для получения id поста и
     perform_create для сохранения автора и отзыва.
     """
