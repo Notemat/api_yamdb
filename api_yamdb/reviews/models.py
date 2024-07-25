@@ -105,7 +105,7 @@ class Title(models.Model):
 class Category(BaseCategoryGenreModel):
     """Модель категории."""
 
-    class Meta(BaseCategoryGenreModel):
+    class Meta(BaseCategoryGenreModel.Meta):
         verbose_name = 'Категория'
         verbose_name_plural = 'Категории'
 
@@ -113,7 +113,7 @@ class Category(BaseCategoryGenreModel):
 class Genre(BaseCategoryGenreModel):
     """Модель жанра."""
 
-    class Meta(BaseCategoryGenreModel):
+    class Meta(BaseCategoryGenreModel.Meta):
         verbose_name = 'Жанр'
         verbose_name_plural = 'Жанры'
 
