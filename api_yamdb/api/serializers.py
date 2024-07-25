@@ -47,7 +47,7 @@ class TitleWriteSerializer(serializers.ModelSerializer):
         queryset=Genre.objects.all(),
         required=True,
         allow_empty=False,
-        allow_null=True
+        allow_null=False
     )
     category = serializers.SlugRelatedField(
         slug_field='slug',
@@ -190,7 +190,7 @@ class RegisterDataSerializer(
     def create(self, validated_data):
         """Создание или получение пользователя."""
 
-        user, created = User.objects.get_or_create(
+        user, _ = User.objects.get_or_create(
             username=validated_data['username'],
             email=validated_data['email']
         )
